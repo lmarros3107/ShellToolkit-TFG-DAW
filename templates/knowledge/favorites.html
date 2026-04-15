@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Favorites{% endblock %}
+
+{% block content %}
+<section class="container">
+    <h1>Session Favorites</h1>
+    <p class="muted">Bookmarked knowledge entries for your current browser session.</p>
+
+    {% if entries %}
+        <div class="grid cards-grid mt-4">
+            {% for item in entries %}
+                <article class="card">
+                    <p class="muted">Module: {{ item.module }} | Added: {{ item.created_at }}</p>
+                    <h2>{{ item.title }}</h2>
+                    <p>{{ item.summary }}</p>
+                    <a class="btn btn-primary" href="{% url 'knowledge:detail' item.slug %}">Open detail</a>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <section class="terminal-box mt-4">
+            <p class="muted">No favorites yet. Use Add to favorites in shell, playbook or knowledge detail pages.</p>
+        </section>
+    {% endif %}
+</section>
+{% endblock %}

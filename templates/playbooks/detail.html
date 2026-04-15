@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | {{ entry.title }}{% endblock %}
+
+{% block content %}
+<section class="container">
+    {% if entry.platform == 'windows' %}
+        <a href="{% url 'playbooks:windows_list' %}" class="muted">&larr; Back to Windows playbooks</a>
+    {% else %}
+        <a href="{% url 'playbooks:linux_list' %}" class="muted">&larr; Back to Linux playbooks</a>
+    {% endif %}
+
+    <article class="card mt-4">
+        <h1>{{ entry.title }}</h1>
+        <p class="muted">Platform: {{ entry.platform }} | Category: {{ entry.category }} | Difficulty: {{ entry.difficulty }}</p>
+
+        <form method="post" action="{% url 'knowledge:toggle_favorite' %}">
+            {% csrf_token %}
+            <input type="hidden" name="app_label" value="playbooks">
+            <input type="hidden" name="model" value="playbookentry">
+            <input type="hidden" name="object_id" value="{{ entry.id }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="btn btn-primary">
+                {% if is_favorite %}Remove from favorites{% else %}Add to favorites{% endif %}
+            </button>
+        </form>
+
+        <h2>Summary</h2>
+        <p>{{ entry.summary }}</p>
+
+        {% if entry.prerequisites %}
+            <h2>Prerequisites</h2>
+            <p>{{ entry.prerequisites }}</p>
+        {% endif %}
+
+        <h2>Commands</h2>
+        <section class="terminal-box" id="playbook-commands">
+            <pre>{{ entry.commands }}</pre>
+            <button type="button" class="btn" data-copy-target="#playbook-commands pre">Copy</button>
+        </section>
+
+        {% if entry.explanation %}
+            <h2>Explanation</h2>
+            <p>{{ entry.explanation }}</p>
+        {% endif %}
+
+        {% if entry.warnings %}
+            <h2>Warnings</h2>
+            <p class="alert alert-error">{{ entry.warnings }}</p>
+        {% endif %}
+
+        {% if entry.tags %}
+            <h2>Tags</h2>
+            <p class="muted">{{ entry.tags }}</p>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}

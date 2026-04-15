@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Nmap Builder{% endblock %}
+
+{% block content %}
+<section class="container">
+    <h1>Nmap Builder</h1>
+    <p class="muted">Build sanitized Nmap command text for authorized lab scenarios only.</p>
+
+    <div class="card">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid form-grid">
+                <div>
+                    <label for="{{ form.target.id_for_label }}">Target</label>
+                    {{ form.target }}
+                    {% if form.target.errors %}<p class="alert alert-error">{{ form.target.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.scan_type.id_for_label }}">Scan type</label>
+                    {{ form.scan_type }}
+                    {% if form.scan_type.errors %}<p class="alert alert-error">{{ form.scan_type.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.port_mode.id_for_label }}">Port mode</label>
+                    {{ form.port_mode }}
+                    {% if form.port_mode.errors %}<p class="alert alert-error">{{ form.port_mode.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.custom_ports.id_for_label }}">Custom ports</label>
+                    {{ form.custom_ports }}
+                    {% if form.custom_ports.errors %}<p class="alert alert-error">{{ form.custom_ports.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.timing.id_for_label }}">Timing</label>
+                    {{ form.timing }}
+                    {% if form.timing.errors %}<p class="alert alert-error">{{ form.timing.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.nse_categories.id_for_label }}">NSE categories</label>
+                    {{ form.nse_categories }}
+                    {% if form.nse_categories.errors %}<p class="alert alert-error">{{ form.nse_categories.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.extra_flags.id_for_label }}">Extra flags</label>
+                    {{ form.extra_flags }}
+                    {% if form.extra_flags.errors %}<p class="alert alert-error">{{ form.extra_flags.errors|join:', ' }}</p>{% endif %}
+                </div>
+            </div>
+
+            {% if form.non_field_errors %}
+                <p class="alert alert-error">{{ form.non_field_errors|join:', ' }}</p>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">Build command</button>
+        </form>
+    </div>
+
+    <section class="terminal-box" id="recon-output" aria-live="polite">
+        <p><span class="accent">$</span> nmap-builder-output</p>
+        {% if build_result %}
+            <pre>{{ build_result.command }}</pre>
+            <button type="button" class="btn" data-copy-target="#recon-output pre">Copy</button>
+            <p class="muted">Noise level: <strong>{{ build_result.noise_level }}</strong></p>
+            <h2>Flag explanations</h2>
+            <ul>
+                {% for explanation in build_result.explanations %}
+                    <li>{{ explanation }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="muted">Submit the form to generate a sanitized command.</p>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}
+

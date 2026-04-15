@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}ShellToolkit | Home{% endblock %}
+
+{% block content %}
+<section class="container hero">
+    <div class="legal-banner" role="note">
+        <strong>Legal notice:</strong> This platform is for authorized labs and educational workflows only.
+    </div>
+
+    <h1>Educational pentesting helpers, safely generated as text.</h1>
+    <p class="muted">Build reverse shell snippets, listeners, encoded payload strings, recon command drafts and playbooks without executing commands on the server.</p>
+
+    <div class="grid cards-grid">
+        <article class="card">
+            <h2>Shell Generator</h2>
+            <p>Create reverse and bind shell commands from audited templates.</p>
+            <a class="btn btn-primary" href="/shells/">Open module</a>
+        </article>
+        <article class="card">
+            <h2>Listener Builder</h2>
+            <p>Generate Netcat, Socat and Metasploit handler text snippets.</p>
+            <a class="btn btn-primary" href="/listeners/">Open module</a>
+        </article>
+        <article class="card">
+            <h2>Encoder</h2>
+            <p>Encode command strings with Base64, URL encoding and Hex.</p>
+            <a class="btn btn-primary" href="/encoder/">Open module</a>
+        </article>
+        <article class="card">
+            <h2>Recon Builder</h2>
+            <p>Build sanitized Nmap command strings for lab scenarios.</p>
+            <a class="btn btn-primary" href="/recon/">Open module</a>
+        </article>
+    </div>
+
+    <section class="terminal-box" aria-label="Security statement">
+        <p><span class="accent">$</span> security-mode --status</p>
+        <p>no-command-execution: enabled</p>
+        <p>csrf-protection: enabled</p>
+        <p>rate-limiting: enabled</p>
+        <p>secure-headers: enabled</p>
+    </section>
+</section>
+{% endblock %}
+

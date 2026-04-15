@@ -1,0 +1,37 @@
+# Git and local metadata
+.git
+.gitignore
+.idea
+.vscode
+
+# Python caches and local virtualenv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local runtime artifacts
+db.sqlite3
+staticfiles
+media
+*.log
+*.pid
+
+# Test and coverage artifacts
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# OS files
+.DS_Store
+Thumbs.db
+

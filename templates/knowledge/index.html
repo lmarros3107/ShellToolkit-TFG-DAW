@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Knowledge Base{% endblock %}
+
+{% block content %}
+<section class="container">
+    <h1>Knowledge Base</h1>
+    <p class="muted">Global indexed view of shells, listeners, recon profiles, and playbooks.</p>
+
+    <div class="card">
+        <form method="get" novalidate>
+            <div class="grid form-grid">
+                <div>
+                    <label for="id_q">Search</label>
+                    <input id="id_q" type="text" name="q" value="{{ query }}" placeholder="keyword, command, tag">
+                </div>
+                <div>
+                    <label for="id_module">Module</label>
+                    <select id="id_module" name="module">
+                        <option value="">All</option>
+                        {% for value in module_options %}
+                            <option value="{{ value }}" {% if active_module == value %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="id_platform">Platform</label>
+                    <select id="id_platform" name="platform">
+                        <option value="">All</option>
+                        {% for value in platform_options %}
+                            <option value="{{ value }}" {% if active_platform == value %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="id_technique">Technique</label>
+                    <select id="id_technique" name="technique">
+                        <option value="">All</option>
+                        {% for value in technique_options %}
+                            <option value="{{ value|lower }}" {% if active_technique == value|lower %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="id_difficulty">Difficulty</label>
+                    <select id="id_difficulty" name="difficulty">
+                        <option value="">All</option>
+                        {% for value in difficulty_options %}
+                            <option value="{{ value|lower }}" {% if active_difficulty == value|lower %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Apply filters</button>
+        </form>
+    </div>
+
+    {% if entries %}
+        <div class="grid cards-grid mt-4">
+            {% for item in entries %}
+                <article class="card">
+                    <p class="muted">Module: {{ item.module }} | Platform: {{ item.platform }}</p>
+                    <h2>{{ item.title }}</h2>
+                    <p class="muted">Technique: {{ item.technique }} | Difficulty: {{ item.difficulty }}</p>
+                    <p>{{ item.summary }}</p>
+                    <a class="btn btn-primary" href="{% url 'knowledge:detail' item.slug %}">Open detail</a>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <section class="terminal-box mt-4">
+            <p class="muted">No knowledge entries match your search and filters.</p>
+        </section>
+    {% endif %}
+</section>
+{% endblock %}

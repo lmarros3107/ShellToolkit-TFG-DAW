@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Windows Playbooks{% endblock %}
+
+{% block content %}
+<section class="container">
+    <h1>Windows Post-Exploitation Playbooks</h1>
+    <p class="muted">Manual, educational checklists for authorized lab environments.</p>
+
+    {% if categories %}
+        <div class="card">
+            <h2>Categories</h2>
+            <p class="muted">{{ categories|join:', ' }}</p>
+        </div>
+    {% endif %}
+
+    {% if entries %}
+        <div class="grid cards-grid">
+            {% for entry in entries %}
+                <article class="card">
+                    <h2>{{ entry.title }}</h2>
+                    <p class="muted">Category: {{ entry.category }}</p>
+                    <p class="muted">Difficulty: {{ entry.difficulty }}</p>
+                    <p>{{ entry.summary }}</p>
+                    <a class="btn btn-primary" href="{% url 'playbooks:detail' entry.slug %}">Open playbook</a>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <section class="terminal-box">
+            <p class="muted">No Windows playbooks are active yet.</p>
+        </section>
+    {% endif %}
+</section>
+{% endblock %}
+

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Listener Generator{% endblock %}
+
+{% block content %}
+<section class="container">
+    <h1>Listener Builder</h1>
+    <p class="muted">Generate listener command text for lab environments. No server-side command execution.</p>
+
+    <div class="card">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid form-grid">
+                <div>
+                    <label for="{{ form.tool.id_for_label }}">Tool</label>
+                    {{ form.tool }}
+                    {% if form.tool.errors %}<p class="alert alert-error">{{ form.tool.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.ip.id_for_label }}">IP (required for metasploit)</label>
+                    {{ form.ip }}
+                    {% if form.ip.errors %}<p class="alert alert-error">{{ form.ip.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.port.id_for_label }}">Port</label>
+                    {{ form.port }}
+                    {% if form.port.errors %}<p class="alert alert-error">{{ form.port.errors|join:', ' }}</p>{% endif %}
+                </div>
+            </div>
+
+            {% if form.non_field_errors %}
+                <p class="alert alert-error">{{ form.non_field_errors|join:', ' }}</p>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">Generate listener</button>
+        </form>
+    </div>
+
+    <section class="terminal-box" id="listener-output" aria-live="polite">
+        <p><span class="accent">$</span> generated-listener</p>
+        {% if generated_command %}
+            <pre>{{ generated_command }}</pre>
+            <button type="button" class="btn" data-copy-target="#listener-output pre">Copy</button>
+            {% if selected_template %}
+                <p class="muted">Template: {{ selected_template.name }}</p>
+            {% endif %}
+        {% else %}
+            <p class="muted">Generate a listener command to see output here.</p>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}
+

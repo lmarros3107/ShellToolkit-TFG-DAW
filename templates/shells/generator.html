@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Shell Generator{% endblock %}
+
+{% block content %}
+<section class="container">
+    <h1>Shell Builder</h1>
+    <p class="muted">Generate shell command text from predefined templates. No server-side command execution.</p>
+
+    <div class="card">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid form-grid">
+                <div>
+                    <label for="{{ form.shell_type.id_for_label }}">Shell type</label>
+                    {{ form.shell_type }}
+                    {% if form.shell_type.errors %}<p class="alert alert-error">{{ form.shell_type.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.language.id_for_label }}">Language</label>
+                    {{ form.language }}
+                    {% if form.language.errors %}<p class="alert alert-error">{{ form.language.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.ip.id_for_label }}">IP (required for reverse)</label>
+                    {{ form.ip }}
+                    {% if form.ip.errors %}<p class="alert alert-error">{{ form.ip.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.port.id_for_label }}">Port</label>
+                    {{ form.port }}
+                    {% if form.port.errors %}<p class="alert alert-error">{{ form.port.errors|join:', ' }}</p>{% endif %}
+                </div>
+            </div>
+
+            {% if form.non_field_errors %}
+                <p class="alert alert-error">{{ form.non_field_errors|join:', ' }}</p>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">Generate command</button>
+        </form>
+    </div>
+
+    <section class="terminal-box" id="shell-output" aria-live="polite">
+        <p><span class="accent">$</span> generated-command</p>
+        {% if generated_command %}
+            <pre>{{ generated_command }}</pre>
+            <button type="button" class="btn" data-copy-target="#shell-output pre">Copy</button>
+            {% if selected_template %}
+                <p class="muted">Template: {{ selected_template.name }}</p>
+                <form method="post" action="{% url 'knowledge:toggle_favorite' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="app_label" value="shells">
+                    <input type="hidden" name="model" value="shelltemplate">
+                    <input type="hidden" name="object_id" value="{{ selected_template.id }}">
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <button type="submit" class="btn btn-primary">
+                        {% if is_favorite %}Remove from favorites{% else %}Add to favorites{% endif %}
+                    </button>
+                </form>
+            {% endif %}
+        {% else %}
+            <p class="muted">Generate a command to see output here.</p>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}

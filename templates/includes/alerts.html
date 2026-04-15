@@ -1,0 +1,8 @@
+{% if messages %}
+    <section class="alerts" aria-live="polite">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+    </section>
+{% endif %}
+

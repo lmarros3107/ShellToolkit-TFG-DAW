@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}429 | Too Many Requests{% endblock %}
+
+{% block content %}
+<section class="container state-page">
+    <h1>429 - Rate limit reached</h1>
+    <p class="muted">You sent too many requests in a short period. Wait a minute and try again.</p>
+    <a class="btn btn-primary" href="{% url 'core:home' %}">Back to home</a>
+</section>
+{% endblock %}
+

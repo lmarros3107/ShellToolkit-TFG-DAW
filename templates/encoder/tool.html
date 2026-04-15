@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Encoder{% endblock %}
+
+{% block content %}
+<section class="container">
+    <h1>Encoding Tool</h1>
+    <p class="muted">Encode text using Base64, URL encoding, or Hex. This module only transforms text.</p>
+
+    <div class="card">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid" style="grid-template-columns: 1fr;">
+                <div>
+                    <label for="{{ form.input_text.id_for_label }}">Input text</label>
+                    {{ form.input_text }}
+                    {% if form.input_text.errors %}<p class="alert alert-error">{{ form.input_text.errors|join:', ' }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.encoding_type.id_for_label }}">Encoding type</label>
+                    {{ form.encoding_type }}
+                    {% if form.encoding_type.errors %}<p class="alert alert-error">{{ form.encoding_type.errors|join:', ' }}</p>{% endif %}
+                </div>
+            </div>
+
+            {% if form.non_field_errors %}
+                <p class="alert alert-error">{{ form.non_field_errors|join:', ' }}</p>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">Encode</button>
+        </form>
+    </div>
+
+    <section class="terminal-box" id="encoder-output" aria-live="polite">
+        <p><span class="accent">$</span> encoded-output{% if selected_encoding %} ({{ selected_encoding }}){% endif %}</p>
+        {% if encoded_output %}
+            <pre>{{ encoded_output }}</pre>
+            <button type="button" class="btn" data-copy-target="#encoder-output pre">Copy</button>
+        {% else %}
+            <p class="muted">Submit text to see encoded output.</p>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}
+

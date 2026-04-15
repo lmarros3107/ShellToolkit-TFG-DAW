@@ -1,0 +1,39 @@
+[
+  {
+    "model": "listeners.listenertemplate",
+    "pk": 1,
+    "fields": {
+      "name": "Netcat Listener",
+      "tool": "netcat",
+      "description": "Basic netcat listener for TCP lab connections.",
+      "template": "nc -lvnp {port}",
+      "tags": "netcat,listener,tcp",
+      "is_active": true
+    }
+  },
+  {
+    "model": "listeners.listenertemplate",
+    "pk": 2,
+    "fields": {
+      "name": "Socat Listener",
+      "tool": "socat",
+      "description": "Socat listener with fork mode.",
+      "template": "socat TCP-LISTEN:{port},reuseaddr,fork -",
+      "tags": "socat,listener",
+      "is_active": true
+    }
+  },
+  {
+    "model": "listeners.listenertemplate",
+    "pk": 3,
+    "fields": {
+      "name": "Metasploit Multi Handler",
+      "tool": "metasploit",
+      "description": "Metasploit multi/handler stub for lab payload handling.",
+      "template": "msfconsole -q -x 'use exploit/multi/handler; set LHOST {ip}; set LPORT {port}; run'",
+      "tags": "metasploit,handler",
+      "is_active": true
+    }
+  }
+]
+

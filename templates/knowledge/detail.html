@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Knowledge Detail{% endblock %}
+
+{% block content %}
+<section class="container">
+    <a href="{% url 'knowledge:index' %}" class="muted">&larr; Back to knowledge index</a>
+
+    <article class="card mt-4">
+        <p class="muted">Module: {{ entry.module }} | Platform: {{ entry.platform }}</p>
+        <h1>{{ entry.title }}</h1>
+        <p class="muted">Technique: {{ entry.technique }} | Difficulty: {{ entry.difficulty }}</p>
+
+        <form method="post" action="{% url 'knowledge:toggle_favorite' %}">
+            {% csrf_token %}
+            <input type="hidden" name="app_label" value="{{ entry.app_label }}">
+            <input type="hidden" name="model" value="{{ entry.model }}">
+            <input type="hidden" name="object_id" value="{{ entry.object_id }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="btn btn-primary">
+                {% if entry.is_favorite %}Remove from favorites{% else %}Add to favorites{% endif %}
+            </button>
+        </form>
+
+        <h2>Summary</h2>
+        <p>{{ entry.summary }}</p>
+
+        <h2>Reference Content</h2>
+        <section class="terminal-box" id="knowledge-body">
+            <pre>{{ entry.body }}</pre>
+            <button type="button" class="btn" data-copy-target="#knowledge-body pre">Copy</button>
+        </section>
+
+        {% if entry.tags %}
+            <h2>Tags</h2>
+            <p class="muted">{{ entry.tags }}</p>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}
