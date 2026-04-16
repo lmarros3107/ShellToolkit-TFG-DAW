@@ -39,18 +39,15 @@ docker compose up -d
 
 ## 3) Verify health and static files
 
-```powershell
+```bash
 curl http://127.0.0.1:8000/health/
 ```
 
 Open `http://127.0.0.1:8000/` and verify CSS is loaded.
 
-## 4) Admin and migrations
-
-Migrations and collectstatic run automatically in `entrypoint.sh`.
 To create an admin user:
 
-```powershell
+```bash
 docker compose exec web python manage.py createsuperuser
 ```
 
@@ -58,16 +55,16 @@ Use custom admin path from `ADMIN_URL`.
 
 ## 5) Deploy security check
 
-```powershell
+```bash
 docker compose exec web python manage.py check --deploy
 ```
 
 If you run deploy checks outside Docker without PostgreSQL, use:
 
-```powershell
+```bash
 $env:DJANGO_SETTINGS_MODULE = "config.settings.prod"
 $env:USE_SQLITE_FOR_CHECK = "True"
-.\.venv\Scripts\python.exe manage.py check --deploy
+python manage.py check --deploy
 ```
 
 Keep `USE_SQLITE_FOR_CHECK=False` in real production.
