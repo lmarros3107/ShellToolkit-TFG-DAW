@@ -13,15 +13,15 @@ The application generates command text and playbooks only, and never executes co
 
 ## Local development
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env
-.\.venv\Scripts\python.exe manage.py migrate
-.\.venv\Scripts\python.exe manage.py loaddata shells/fixtures/initial_shells.json
-.\.venv\Scripts\python.exe manage.py loaddata listeners/fixtures/initial_listeners.json
-.\.venv\Scripts\python.exe manage.py loaddata playbooks/fixtures/linux_playbooks.json
-.\.venv\Scripts\python.exe manage.py loaddata playbooks/fixtures/windows_playbooks.json
-.\.venv\Scripts\python.exe manage.py runserver
+```bash
+python -m pip install -r requirements.txt
+cp .env.example .env
+python manage.py migrate
+python manage.py loaddata shells/fixtures/initial_shells.json
+python manage.py loaddata listeners/fixtures/initial_listeners.json
+python manage.py loaddata playbooks/fixtures/linux_playbooks.json
+python manage.py loaddata playbooks/fixtures/windows_playbooks.json
+python manage.py runserver
 ```
 
 ## Static files notes
@@ -35,7 +35,7 @@ Copy-Item .env.example .env
 
 Use Docker Compose (web + db):
 
-```powershell
+```bash
 docker compose build
 docker compose up -d
 ```
@@ -46,14 +46,14 @@ Detailed production steps are in `DEPLOYMENT.md`.
 
 Run deploy check inside container:
 
-```powershell
+```bash
 docker compose exec web python manage.py check --deploy
 ```
 
 Local fallback for deploy check when PostgreSQL is unavailable:
 
-```powershell
-$env:DJANGO_SETTINGS_MODULE = "config.settings.prod"
-$env:USE_SQLITE_FOR_CHECK = "True"
-.\.venv\Scripts\python.exe manage.py check --deploy
+```bash
+export DJANGO_SETTINGS_MODULE="config.settings.prod"
+export USE_SQLITE_FOR_CHECK="True"
+python manage.py check --deploy
 ```

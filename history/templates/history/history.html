@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Session History{% endblock %}
+
+{% block content %}
+<section class="container">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:0.5rem;">
+        <div>
+            <h1 style="margin-bottom:0.25rem;">Session History</h1>
+            <p class="muted" style="margin:0;">Generated outputs for your current browser session.</p>
+        </div>
+        <form method="post" action="/history/clear/confirm/" style="flex-shrink:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Clear history</button>
+        </form>
+    </div>
+
+    {% if page_obj %}
+        <p class="muted pagination-info">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }}
+            of {{ paginator.count }} entries
+            — Page {{ page_obj.number }} of {{ paginator.num_pages }}
+        </p>
+
+        <div class="grid mt-4">
+            {% for row in page_obj %}
+                <article class="card">
+                    <p class="muted">Module: {{ row.module }} | Created: {{ row.created_at }}</p>
+                    <h2>Input</h2>
+                    <section class="terminal-box">
+                        {% if row.formatted_input_lines %}
+                            {% for item in row.formatted_input_lines %}
+                                <p><strong>{{ item.label }}:</strong> {{ item.value }}</p>
+                            {% endfor %}
+                        {% else %}
+                            <p class="muted">No input details available.</p>
+                        {% endif %}
+                    </section>
+                    <h2>Output</h2>
+                    <section class="terminal-box" id="history-output-{{ forloop.counter }}">
+                        <pre>{{ row.generated_output }}</pre>
+                        <button type="button" class="btn" data-copy-target="#history-output-{{ forloop.counter }} pre">Copy</button>
+                    </section>
+                    {% if row.favorite_target or row.module == 'encoder' %}
+                        {% if row.favorite_target and row.is_already_favorite %}
+                            <button type="button" class="btn" disabled>Already saved</button>
+                        {% elif row.favorite_target %}
+                            <form method="post" action="{% url 'knowledge:add_favorite_from_history' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="history_id" value="{{ row.id }}">
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <button type="submit" class="btn btn-primary">Add to favorites</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'knowledge:toggle_favorite' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="app_label" value="knowledge">
+                                <input type="hidden" name="model" value="sessionhistory">
+                                <input type="hidden" name="object_id" value="{{ row.id }}">
+                                <button type="submit" class="btn btn-primary">Add to favorites</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+
+        {% if paginator.num_pages > 1 %}
+        <nav class="pagination" aria-label="History pagination">
+            {% if page_obj.has_previous %}
+                <a class="btn btn-ghost" href="?page=1" aria-label="First page">«</a>
+                <a class="btn btn-ghost" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous page">‹</a>
+            {% endif %}
+
+            {% for num in paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="btn btn-primary active" aria-current="page">{{ num }}</span>
+                {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                    <a class="btn btn-ghost" href="?page={{ num }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a class="btn btn-ghost" href="?page={{ page_obj.next_page_number }}" aria-label="Next page">›</a>
+                <a class="btn btn-ghost" href="?page={{ paginator.num_pages }}" aria-label="Last page">»</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+    {% else %}
+        <section class="terminal-box mt-4">
+            <p class="muted">No history entries yet. Generate commands from modules first.</p>
+        </section>
+    {% endif %}
+</section>
+{% endblock %}

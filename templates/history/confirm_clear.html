@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | {{ confirm_title }}{% endblock %}
+
+{% block content %}
+<section class="container">
+    <h1>{{ confirm_title }}</h1>
+    <article class="card">
+        <h2>⚠ Confirmation required</h2>
+        <p>{{ confirm_message }}</p>
+        <form method="post" action="{% url confirm_action %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">{{ confirm_button }}</button>
+            <a class="btn" href="{% url cancel_url %}">Cancel</a>
+        </form>
+    </article>
+</section>
+{% endblock %}
+

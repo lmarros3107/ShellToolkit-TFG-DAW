@@ -4,11 +4,7 @@
 
 {% block content %}
 <section class="container">
-    {% if entry.platform == 'windows' %}
-        <a href="{% url 'playbooks:windows_list' %}" class="muted">&larr; Back to Windows playbooks</a>
-    {% else %}
-        <a href="{% url 'playbooks:linux_list' %}" class="muted">&larr; Back to Linux playbooks</a>
-    {% endif %}
+    <a href="/playbooks/" class="muted">&larr; Back to Playbooks</a>
 
     <article class="card mt-4">
         <h1>{{ entry.title }}</h1>

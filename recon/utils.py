@@ -34,6 +34,9 @@ def build_nmap_command(cleaned_data):
     nse_categories = cleaned_data.get("nse_categories", [])
     extra_flags = cleaned_data.get("extra_flags", "")
 
+    if isinstance(nse_categories, str):
+        nse_categories = [nse_categories] if nse_categories else []
+
     command_parts = ["nmap"]
     explanations = []
 

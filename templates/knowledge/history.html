@@ -7,6 +7,11 @@
     <h1>Session History</h1>
     <p class="muted">Generated outputs for your current browser session.</p>
 
+    <form method="post" action="{% url 'knowledge:clear_history_confirm' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Clear history</button>
+    </form>
+
     {% if rows %}
         <div class="grid mt-4">
             {% for row in rows %}
@@ -14,13 +19,31 @@
                     <p class="muted">Module: {{ row.module }} | Created: {{ row.created_at }}</p>
                     <h2>Input</h2>
                     <section class="terminal-box">
-                        <pre>{{ row.input_data }}</pre>
+                        {% if row.formatted_input_lines %}
+                            {% for item in row.formatted_input_lines %}
+                                <p><strong>{{ item.label }}:</strong> {{ item.value }}</p>
+                            {% endfor %}
+                        {% else %}
+                            <p class="muted">No input details available.</p>
+                        {% endif %}
                     </section>
                     <h2>Output</h2>
-                    <section class="terminal-box" id="history-output-{{ row.id }}">
+                    <section class="terminal-box" id="history-output-{{ forloop.counter }}">
                         <pre>{{ row.generated_output }}</pre>
-                        <button type="button" class="btn" data-copy-target="#history-output-{{ row.id }} pre">Copy</button>
+                        <button type="button" class="btn" data-copy-target="#history-output-{{ forloop.counter }} pre">Copy</button>
                     </section>
+                    {% if row.favorite_target %}
+                        {% if row.is_already_favorite %}
+                            <button type="button" class="btn" disabled>Already saved</button>
+                        {% else %}
+                            <form method="post" action="{% url 'knowledge:add_favorite_from_history' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="history_id" value="{{ row.id }}">
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <button type="submit" class="btn btn-primary">Add to favorites</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
                 </article>
             {% endfor %}
         </div>

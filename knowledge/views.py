@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -138,8 +139,69 @@ def detail(request, slug):
 def history(request):
     # SECURITY: no command execution
     session_key = _ensure_session_key(request)
-    rows = SessionHistory.objects.filter(session_key=session_key).order_by("-created_at")
-    return render(request, "knowledge/history.html", {"rows": rows})
+    entries = SessionHistory.objects.filter(session_key=session_key).order_by("-created_at")
+    paginator = Paginator(entries, 6)
+    page_number = request.GET.get("page", 1)
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages or 1)
+
+    for row in page_obj:
+        row.formatted_input_lines = _format_history_input(row.input_data)
+        row.favorite_target = _resolve_history_favorite_target(row)
+        row.is_already_favorite = False
+        if row.favorite_target:
+            content_type = ContentType.objects.get(
+                app_label=row.favorite_target["app_label"],
+                model=row.favorite_target["model"],
+            )
+            row.is_already_favorite = SessionFavorite.objects.filter(
+                session_key=session_key,
+                content_type=content_type,
+                object_id=row.favorite_target["object_id"],
+            ).exists()
+    return render(
+        request,
+        "history/history.html",
+        {
+            "page_obj": page_obj,
+            "paginator": paginator,
+        },
+    )
+
+
+@require_POST
+def clear_history_confirm(request):
+    return render(
+        request,
+        "history/confirm_clear.html",
+        {
+            "confirm_action": "knowledge:clear_history",
+            "cancel_url": "knowledge:history",
+            "confirm_title": "Clear history",
+            "confirm_message": "Are you sure you want to delete all history entries? This action cannot be undone.",
+            "confirm_button": "Yes, delete all",
+        },
+    )
+
+
+def clear_history(request):
+    # SECURITY: no command execution
+    if request.method != "POST":
+        return redirect("knowledge:history")
+
+    session_key = _ensure_session_key(request)
+    deleted_count, _ = SessionHistory.objects.filter(session_key=session_key).delete()
+
+    if deleted_count:
+        messages.success(request, "History cleared successfully.")
+    else:
+        messages.info(request, "No history entries to clear.")
+
+    return redirect("knowledge:history")
 
 
 def favorites(request):
@@ -167,7 +229,74 @@ def favorites(request):
             }
         )
 
-    return render(request, "knowledge/favorites.html", {"entries": entries})
+    return render(request, "favorites/favorites.html", {"entries": entries})
+
+
+@require_POST
+def clear_favorites_confirm(request):
+    return render(
+        request,
+        "favorites/confirm_clear.html",
+        {
+            "confirm_action": "knowledge:clear_favorites",
+            "cancel_url": "knowledge:favorites",
+            "confirm_title": "Clear favorites",
+            "confirm_message": "Are you sure you want to delete all favorites entries? This action cannot be undone.",
+            "confirm_button": "Yes, delete all",
+        },
+    )
+
+
+def clear_favorites(request):
+    # SECURITY: no command execution
+    if request.method != "POST":
+        return redirect("knowledge:favorites")
+
+    session_key = _ensure_session_key(request)
+    deleted_count, _ = SessionFavorite.objects.filter(session_key=session_key).delete()
+
+    if deleted_count:
+        messages.success(request, "Favorites cleared successfully.")
+    else:
+        messages.info(request, "No favorites entries to clear.")
+
+    return redirect("knowledge:favorites")
+
+
+@require_POST
+def add_favorite_from_history(request):
+    # SECURITY: no command execution
+    session_key = _ensure_session_key(request)
+    history_id = (request.POST.get("history_id") or "").strip()
+    next_url = (request.POST.get("next") or "").strip() or "knowledge:history"
+
+    if not history_id.isdigit():
+        messages.error(request, "Invalid history entry.")
+        return redirect(next_url)
+
+    row = SessionHistory.objects.filter(id=int(history_id), session_key=session_key).first()
+    if not row:
+        messages.error(request, "History entry not found.")
+        return redirect(next_url)
+
+    target = _resolve_history_favorite_target(row)
+    if not target:
+        messages.info(request, "This history entry cannot be saved to favorites.")
+        return redirect(next_url)
+
+    content_type = ContentType.objects.get(app_label=target["app_label"], model=target["model"])
+    favorite, created = SessionFavorite.objects.get_or_create(
+        session_key=session_key,
+        content_type=content_type,
+        object_id=target["object_id"],
+    )
+
+    if created:
+        messages.success(request, "Added to favorites.")
+    else:
+        messages.info(request, "Already saved in favorites.")
+
+    return redirect(next_url)
 
 
 @require_POST
@@ -198,7 +327,7 @@ def toggle_favorite(request):
     else:
         favorite.delete()
         messages.info(request, "Removed from favorites.")
-
+    
     return redirect(next_url)
 
 
@@ -366,4 +495,84 @@ def _favorite_summary(obj):
     if isinstance(obj, PlaybookEntry):
         return obj.summary
     return ""
+
+
+def _format_history_input(input_data):
+    if not isinstance(input_data, dict):
+        return []
+
+    label_map = {
+        "shell_type": "Shell type",
+        "language": "Language",
+        "ip": "IP",
+        "port": "Port",
+        "lhost": "LHOST",
+        "lport": "LPORT",
+        "encoding": "Encoding",
+        "scan_type": "Scan type",
+    }
+    shell_type_map = {
+        "reverse": "Reverse Shell",
+        "bind": "Bind Shell",
+    }
+    language_map = {
+        "bash": "Bash",
+        "python": "Python",
+        "php": "PHP",
+        "powershell": "PowerShell",
+        "netcat": "Netcat",
+    }
+
+    lines = []
+    for key, value in input_data.items():
+        key_text = str(key)
+        if key_text in {"template_id", "id", "session_key"} or key_text.endswith("_id"):
+            continue
+
+        label = label_map.get(key_text, key_text.replace("_", " ").capitalize())
+        display_value = _format_history_value(value)
+
+        if key_text == "shell_type":
+            display_value = shell_type_map.get(str(value).strip().lower(), display_value)
+        elif key_text == "language":
+            display_value = language_map.get(str(value).strip().lower(), display_value)
+
+        lines.append({"label": label, "value": display_value})
+
+    return lines
+
+
+def _format_history_value(value):
+    if value is None:
+        return "-"
+    if isinstance(value, bool):
+        return "Yes" if value else "No"
+    if isinstance(value, (list, tuple, set)):
+        return ", ".join(str(item) for item in value)
+    if isinstance(value, dict):
+        return ", ".join(f"{k}: {v}" for k, v in value.items())
+    text = str(value).strip()
+    return text or "-"
+
+
+def _resolve_history_favorite_target(row):
+    if not isinstance(row.input_data, dict):
+        return None
+
+    template_id = row.input_data.get("template_id")
+    if not isinstance(template_id, int):
+        return None
+
+    if row.module == "shells":
+        if ShellTemplate.objects.filter(id=template_id, is_active=True).exists():
+            return {"app_label": "shells", "model": "shelltemplate", "object_id": template_id}
+        return None
+
+    if row.module == "listeners":
+        if ListenerTemplate.objects.filter(id=template_id, is_active=True).exists():
+            return {"app_label": "listeners", "model": "listenertemplate", "object_id": template_id}
+        return None
+
+    return None
+
 

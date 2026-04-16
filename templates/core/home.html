@@ -34,13 +34,24 @@
         </article>
     </div>
 
-    <section class="terminal-box" aria-label="Security statement">
-        <p><span class="accent">$</span> security-mode --status</p>
-        <p>no-command-execution: enabled</p>
-        <p>csrf-protection: enabled</p>
-        <p>rate-limiting: enabled</p>
-        <p>secure-headers: enabled</p>
-    </section>
+    <div class="stat-bar">
+        <div class="stat-item">
+            <span class="stat-number">6</span>
+            <span class="stat-label">Modules</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">Server-side generation</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">0</span>
+            <span class="stat-label">Commands executed</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">CSRF</span>
+            <span class="stat-label">Protected</span>
+        </div>
+    </div>
 </section>
 {% endblock %}
 

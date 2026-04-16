@@ -1,33 +1,27 @@
 {% extends 'base.html' %}
 
-{% block title %}Shell Toolkit | Linux Playbooks{% endblock %}
+{% block title %}Shell Toolkit | Playbooks{% endblock %}
 
 {% block content %}
 <section class="container playbooks-page">
     <div class="playbooks-header">
-        <h1>Linux Post-Exploitation Playbooks</h1>
+        <h1>Post-Exploitation Playbooks</h1>
         <p class="muted">Manual, educational checklists for authorized lab environments.</p>
     </div>
 
     <div class="playbooks-filter-bar">
-        <a class="btn {% if not current_platform %}btn-primary active{% endif %}" href="{% url 'playbooks:linux_list' %}">All</a>
-        <a class="btn {% if current_platform == 'linux' %}btn-primary active{% endif %}" href="{% url 'playbooks:linux_list' %}?platform=linux">Linux</a>
-        <a class="btn {% if current_platform == 'windows' %}btn-primary active{% endif %}" href="{% url 'playbooks:linux_list' %}?platform=windows">Windows</a>
+        <a class="btn {% if not current_platform %}btn-primary active{% endif %}" href="{% url 'playbooks:list' %}">All</a>
+        <a class="btn {% if current_platform == 'linux' %}btn-primary active{% endif %}" href="{% url 'playbooks:list' %}?platform=linux">Linux</a>
+        <a class="btn {% if current_platform == 'windows' %}btn-primary active{% endif %}" href="{% url 'playbooks:list' %}?platform=windows">Windows</a>
     </div>
 
-    {% if categories %}
-        <div class="card playbooks-categories-card">
-            <h2>Categories</h2>
-            <p class="muted">{{ categories|join:', ' }}</p>
-        </div>
-    {% endif %}
 
     {% if entries %}
         <div class="grid cards-grid playbooks-grid">
             {% for entry in entries %}
                 <article class="card">
                     <h2>{{ entry.title }}</h2>
-                    <p class="muted">Category: {{ entry.category }}</p>
+                    <p class="muted">Platform: {{ entry.platform }} | Category: {{ entry.category }}</p>
                     <p class="muted">Difficulty: {{ entry.difficulty }}</p>
                     <p>{{ entry.summary }}</p>
                     <a class="btn btn-primary" href="{% url 'playbooks:detail' entry.slug %}">Open playbook</a>
@@ -36,7 +30,7 @@
         </div>
     {% else %}
         <section class="terminal-box">
-            <p class="muted">No Linux playbooks are active yet.</p>
+            <p class="muted">No playbooks match the selected platform filter.</p>
         </section>
     {% endif %}
 </section>

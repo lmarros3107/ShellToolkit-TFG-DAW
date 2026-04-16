@@ -19,7 +19,15 @@
                 </div>
                 <div>
                     <label for="{{ form.language.id_for_label }}">Language</label>
-                    {{ form.language }}
+                    {% with selected_language=form.language.value %}
+                    <select name="language" id="{{ form.language.id_for_label }}" required>
+                        <option value="bash" {% if selected_language == 'bash' %}selected{% endif %}>Bash</option>
+                        <option value="python" {% if selected_language == 'python' %}selected{% endif %}>Python</option>
+                        <option value="php" {% if selected_language == 'php' %}selected{% endif %}>PHP</option>
+                        <option value="powershell" {% if selected_language == 'powershell' %}selected{% endif %}>PowerShell</option>
+                        <option value="netcat" {% if selected_language == 'netcat' %}selected{% endif %}>Netcat</option>
+                    </select>
+                    {% endwith %}
                     {% if form.language.errors %}<p class="alert alert-error">{{ form.language.errors|join:', ' }}</p>{% endif %}
                 </div>
                 <div>

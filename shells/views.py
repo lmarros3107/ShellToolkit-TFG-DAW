@@ -16,8 +16,8 @@ def generator(request):
     form = ShellGenerateForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
-        shell_type = form.cleaned_data["shell_type"]
-        language = form.cleaned_data["language"]
+        shell_type = str(form.cleaned_data["shell_type"]).strip().lower()
+        language = str(form.cleaned_data["language"]).strip().lower()
         ip_value = form.cleaned_data.get("ip", "")
         port_value = str(form.cleaned_data["port"])
 

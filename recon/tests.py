@@ -71,7 +71,7 @@ class NmapBuilderViewTests(TestCase):
                 "port_mode": "top1000",
                 "custom_ports": "",
                 "timing": "3",
-                "nse_categories": ["default", "safe"],
+                "nse_categories": ["default"],
                 "extra_flags": "-Pn",
             },
         )
@@ -80,3 +80,68 @@ class NmapBuilderViewTests(TestCase):
         self.assertContains(response, "nmap")
         self.assertEqual(SessionHistory.objects.filter(module="recon").count(), 1)
 
+    def test_builds_basic_command(self):
+        response = self.client.post(
+            reverse("recon:nmap_builder"),
+            {
+                "target": "127.0.0.1",
+                "scan_type": "basic",
+                "port_mode": "top100",
+                "timing": "2",
+                "nse_categories": ["default"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "nmap")
+        self.assertEqual(SessionHistory.objects.filter(module="recon").count(), 1)
+
+    def test_handles_optional_fields(self):
+        response = self.client.post(
+            reverse("recon:nmap_builder"),
+            {
+                "target": "127.0.0.1",
+                "scan_type": "basic",
+                "port_mode": "custom",
+                "custom_ports": "22,80",
+                "timing": "2",
+                "nse_categories": ["safe"],
+                "extra_flags": "--open",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "nmap")
+        self.assertEqual(SessionHistory.objects.filter(module="recon").count(), 1)
+
+    def test_builds_full_command(self):
+        response = self.client.post(
+            reverse("recon:nmap_builder"),
+            {
+                "target": "127.0.0.1",
+                "scan_type": "full",
+                "port_mode": "all",
+                "timing": "4",
+                "nse_categories": ["default"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "nmap")
+        self.assertEqual(SessionHistory.objects.filter(module="recon").count(), 1)
+
+    def test_accepts_vuln_scan(self):
+        response = self.client.post(
+            reverse("recon:nmap_builder"),
+            {
+                "target": "127.0.0.1",
+                "scan_type": "vuln",
+                "port_mode": "top1000",
+                "timing": "3",
+                "nse_categories": ["safe"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "nmap")
+        self.assertEqual(SessionHistory.objects.filter(module="recon").count(), 1)

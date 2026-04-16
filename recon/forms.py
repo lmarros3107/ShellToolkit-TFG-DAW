@@ -43,7 +43,11 @@ class NmapBuilderForm(forms.Form):
     port_mode = forms.ChoiceField(choices=PORT_MODE_CHOICES, required=True)
     custom_ports = forms.CharField(max_length=120, required=False, strip=True)
     timing = forms.ChoiceField(choices=TIMING_CHOICES, required=True)
-    nse_categories = forms.MultipleChoiceField(choices=NSE_CHOICES, required=False)
+    nse_categories = forms.MultipleChoiceField(
+        choices=NSE_CHOICES,
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
     extra_flags = forms.CharField(max_length=200, required=False, strip=True)
 
     def clean_target(self):
@@ -136,4 +140,3 @@ class NmapBuilderForm(forms.Form):
         port = int(chunk)
         if port < 1 or port > 65535:
             raise forms.ValidationError("Custom ports must be between 1 and 65535.")
-

@@ -1,7 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="ShellToolkit logo">
-  <rect width="128" height="128" rx="20" fill="#111827"/>
-  <rect x="14" y="14" width="100" height="100" rx="12" fill="#0a0f14" stroke="rgba(34,211,238,0.3)"/>
-  <path d="M40 46L26 58l14 12" fill="none" stroke="#22c55e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M56 82h36" fill="none" stroke="#22d3ee" stroke-width="8" stroke-linecap="round"/>
+  <rect width="128" height="128" rx="20" fill="#4fd9ff"/>
+  <path d="M28 46l14 12-14 12" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M56 82h36" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round"/>
 </svg>
-

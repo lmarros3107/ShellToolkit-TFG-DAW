@@ -18,6 +18,9 @@ def nmap_builder(request):
         if not request.session.session_key:
             request.session.create()
 
+        nse_category = form.cleaned_data.get("nse_categories") or ""
+        nse_categories = [nse_category] if nse_category else []
+
         SessionHistory.objects.create(
             session_key=request.session.session_key,
             module="recon",
@@ -27,7 +30,7 @@ def nmap_builder(request):
                 "port_mode": form.cleaned_data["port_mode"],
                 "custom_ports": form.cleaned_data.get("custom_ports", ""),
                 "timing": form.cleaned_data["timing"],
-                "nse_categories": form.cleaned_data.get("nse_categories", []),
+                "nse_categories": nse_categories,
                 "extra_flags": form.cleaned_data.get("extra_flags", ""),
             },
             generated_output=build_result["command"],

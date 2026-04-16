@@ -6,30 +6,22 @@ from knowledge.models import SessionFavorite
 from .models import PlaybookEntry
 
 
+def playbook_list(request):
+    # SECURITY: no command execution
+    context = _build_list_context(request)
+    return render(request, "playbooks/list.html", context)
+
+
 def linux_list(request):
     # SECURITY: no command execution
-    entries = PlaybookEntry.objects.filter(platform="linux", is_active=True)
-    categories = sorted({entry.category for entry in entries})
-
-    context = {
-        "entries": entries,
-        "categories": categories,
-        "platform_label": "Linux",
-    }
-    return render(request, "playbooks/linux_list.html", context)
+    context = _build_list_context(request, default_platform="linux")
+    return render(request, "playbooks/list.html", context)
 
 
 def windows_list(request):
     # SECURITY: no command execution
-    entries = PlaybookEntry.objects.filter(platform="windows", is_active=True)
-    categories = sorted({entry.category for entry in entries})
-
-    context = {
-        "entries": entries,
-        "categories": categories,
-        "platform_label": "Windows",
-    }
-    return render(request, "playbooks/windows_list.html", context)
+    context = _build_list_context(request, default_platform="windows")
+    return render(request, "playbooks/list.html", context)
 
 
 def detail(request, slug):
@@ -51,3 +43,27 @@ def detail(request, slug):
         "is_favorite": is_favorite,
     }
     return render(request, "playbooks/detail.html", context)
+
+
+def _build_list_context(request, default_platform=""):
+    platform = (request.GET.get("platform") or "").strip().lower()
+    valid_platforms = {"linux", "windows"}
+    if platform in valid_platforms:
+        current_platform = platform
+    elif default_platform in valid_platforms:
+        current_platform = default_platform
+    else:
+        current_platform = ""
+
+    entries = PlaybookEntry.objects.filter(is_active=True)
+    if current_platform:
+        entries = entries.filter(platform=current_platform)
+
+    categories = sorted({entry.category for entry in entries})
+
+    return {
+        "entries": entries,
+        "categories": categories,
+        "current_platform": current_platform,
+    }
+

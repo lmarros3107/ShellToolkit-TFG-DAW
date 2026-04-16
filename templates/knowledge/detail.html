@@ -4,7 +4,11 @@
 
 {% block content %}
 <section class="container">
-    <a href="{% url 'knowledge:index' %}" class="muted">&larr; Back to knowledge index</a>
+    {% if request.GET.source == 'favorites' %}
+        <a href="{% url 'knowledge:favorites' %}" class="muted">&larr; Back to Favorites</a>
+    {% else %}
+        <a href="{% url 'knowledge:index' %}" class="muted">&larr; Back to knowledge index</a>
+    {% endif %}
 
     <article class="card mt-4">
         <p class="muted">Module: {{ entry.module }} | Platform: {{ entry.platform }}</p>
@@ -16,7 +20,6 @@
             <input type="hidden" name="app_label" value="{{ entry.app_label }}">
             <input type="hidden" name="model" value="{{ entry.model }}">
             <input type="hidden" name="object_id" value="{{ entry.object_id }}">
-            <input type="hidden" name="next" value="{{ request.path }}">
             <button type="submit" class="btn btn-primary">
                 {% if entry.is_favorite %}Remove from favorites{% else %}Add to favorites{% endif %}
             </button>
