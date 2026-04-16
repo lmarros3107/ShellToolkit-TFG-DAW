@@ -315,12 +315,20 @@ textarea:focus {
     background: var(--surface-2);
     color: var(--text-secondary);
     padding: 0.75rem 0.95rem;
+    margin-top: 0.6rem;
 }
 
 .alert-error {
     border-color: rgba(255, 93, 121, 0.45);
     color: #ff8ea8;
     background: rgba(88, 19, 35, 0.5);
+    margin-top: 1rem;
+}
+
+input + .alert-error,
+select + .alert-error,
+textarea + .alert-error {
+    margin-top: 0.75rem;
 }
 
 .alert-warning {
@@ -339,6 +347,17 @@ textarea:focus {
     border-color: rgba(79, 217, 255, 0.48);
     color: #8cecff;
     background: rgba(9, 43, 66, 0.44);
+}
+
+.errorlist {
+    margin-top: 0.5rem;
+    padding-left: 1rem;
+    color: #ff8ea8;
+    font-size: var(--fs-sm);
+}
+
+.errorlist li {
+    margin-top: 0.35rem;
 }
 
 .footer {

@@ -31,7 +31,7 @@ Required variables:
 
 ## 2) Build and run
 
-```powershell
+```bash
 docker compose build
 
 docker compose up -d

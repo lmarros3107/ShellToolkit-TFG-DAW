@@ -11,9 +11,11 @@ The application generates command text and playbooks only, and never executes co
 - PostgreSQL for production database
 - Docker Compose for deployment
 
-## Local development
+## Local development (Linux)
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install -r requirements.txt
 cp .env.example .env
 python manage.py migrate
