@@ -1,19 +1,20 @@
 # Guia de despliegue de ShellToolkit
 
-Este proyecto usa la siguiente arquitectura de produccion:
+Este es el flujo de despliegue que estoy usando para el TFG.
+Arquitectura en produccion:
 
 - **Web**: Django + Gunicorn + WhiteNoise
 - **DB**: PostgreSQL
-- **Runtime de contenedores**: Docker Compose
+- **Contenedores**: Docker Compose
 
-Para el alcance de este TFG no se incluye un contenedor Nginx dentro del stack.
-Si necesitas TLS externo, usa tu reverse proxy y reenvia al contenedor web.
+En este proyecto no meto Nginx dentro del stack.
+Si necesitas TLS, lo ideal es ponerlo fuera con un reverse proxy.
 
 ## Por que WhiteNoise
 
-- Menos piezas operativas que una separacion Django + Nginx
-- Estaticos servidos por Django/Gunicorn con assets hasheados
-- Flujo facil de reproducir en local
+- Menos complejidad para un TFG
+- Sirve estaticos con hash en produccion
+- Facil de reproducir en local
 
 ## 1) Preparar entorno
 
@@ -59,12 +60,12 @@ curl http://127.0.0.1:8000/health/
 Invoke-WebRequest -Uri "http://127.0.0.1:8000/health/" -UseBasicParsing
 ```
 
-Abre `http://127.0.0.1:8000/` y verifica que el CSS carga correctamente.
+Abre `http://127.0.0.1:8000/` y comprueba que carga bien el CSS.
 
 Arquitectura de estaticos:
 
-- `static/` es el directorio fuente versionado en Git.
-- `staticfiles/` es salida generada por `collectstatic` al arrancar el contenedor y no debe versionarse.
+- `static/` es la carpeta fuente versionada en Git.
+- `staticfiles/` se genera con `collectstatic` y no se versiona.
 
 Para crear un usuario administrador:
 
@@ -72,7 +73,7 @@ Para crear un usuario administrador:
 docker compose exec web python manage.py createsuperuser
 ```
 
-Usa la ruta de admin definida en `ADMIN_URL`.
+Recuerda usar la ruta de admin definida en `ADMIN_URL`.
 
 ## 4) Check de seguridad de despliegue
 
@@ -100,5 +101,5 @@ $env:USE_SQLITE_FOR_CHECK = "True"
 python manage.py check --deploy
 ```
 
-En produccion real, mantén `USE_SQLITE_FOR_CHECK=False`.
+En produccion real, deja `USE_SQLITE_FOR_CHECK=False`.
 

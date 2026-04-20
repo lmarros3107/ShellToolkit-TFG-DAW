@@ -1,7 +1,7 @@
 # ShellToolkit
 
-ShellToolkit es una plataforma educativa en Django para apoyar laboratorios de pentesting.
-La aplicacion genera texto de comandos y playbooks, y no ejecuta comandos en el servidor.
+ShellToolkit es mi proyecto de TFG (DAW) hecho con Django para apoyar practicas de pentesting en laboratorio.
+La app solo genera texto (comandos y playbooks) y no ejecuta nada en el servidor.
 
 ## Stack
 
@@ -47,15 +47,15 @@ python manage.py runserver
 
 - `base.html` usa `{% load static %}` y rutas `{% static '...' %}` validas.
 - `config/settings/base.py` define `STATIC_URL`, `STATICFILES_DIRS`, `STATIC_ROOT`, `MEDIA_URL` y `MEDIA_ROOT`.
-- `static/` es la fuente de verdad de los assets del proyecto.
-- `staticfiles/` es salida generada por `collectstatic` y no debe versionarse en Git.
-- Desarrollo usa `config.settings.dev` y produccion usa `config.settings.prod`.
-- `config/static_storage.py` garantiza URLs estaticas con prefijo raiz (por ejemplo, `/static/...`).
+- `static/` es la carpeta fuente de estilos, JS e imagenes.
+- `staticfiles/` es una salida generada por `collectstatic` (no se versiona).
+- En desarrollo se usa `config.settings.dev` y en produccion `config.settings.prod`.
+- `config/static_storage.py` se mantiene para asegurar URLs correctas con `/static/...`.
 
 ## Seleccion de settings
 
 - CLI (`manage.py`) usa por defecto `config.settings.dev`.
-- WSGI/ASGI usan por defecto `config.settings.prod` como fallback seguro.
+- WSGI/ASGI usan por defecto `config.settings.prod`.
 - Si hace falta, define `DJANGO_SETTINGS_MODULE` de forma explicita.
 
 ## Despliegue en produccion
