@@ -10,7 +10,7 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
         "/listeners/",
         "/encoder/",
         "/recon/",
-        "/knowledge/",
+        "/jwt/",
         "/history/",
         "/favorites/",
     )

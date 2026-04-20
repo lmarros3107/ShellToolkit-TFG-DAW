@@ -7,7 +7,7 @@
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:0.5rem;">
         <div>
             <h1 style="margin-bottom:0.25rem;">Session Favorites</h1>
-            <p class="muted" style="margin:0;">Bookmarked knowledge entries for your current browser session.</p>
+            <p class="muted" style="margin:0;">Bookmarked tool entries for your current browser session.</p>
         </div>
         <form method="post" action="{% url 'knowledge:clear_favorites_confirm' %}" style="flex-shrink:0;">
             {% csrf_token %}
@@ -22,7 +22,7 @@
                     <p class="muted">Module: {{ item.module }} | Added: {{ item.created_at }}</p>
                     <h2>{{ item.title }}</h2>
                     <p>{{ item.summary }}</p>
-                    <a class="btn btn-primary" href="{% url 'knowledge:detail' item.slug %}?source=favorites">Open detail</a>
+                    <a class="btn btn-primary" href="{{ item.url }}">Open module</a>
                 </article>
             {% endfor %}
         </div>

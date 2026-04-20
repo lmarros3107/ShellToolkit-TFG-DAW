@@ -5,8 +5,8 @@ from . import views
 app_name = "knowledge"
 
 urlpatterns = [
-    path("knowledge/", views.index, name="index"),
-    path("knowledge/<slug:slug>/", views.detail, name="detail"),
+    path("jwt/", views.jwt_tool, name="jwt"),
+    path("jwt/log/", views.jwt_log_action, name="jwt_log_action"),
     path("history/", views.history, name="history"),
     path("history/add-favorite/", views.add_favorite_from_history, name="add_favorite_from_history"),
     path("history/clear/confirm/", views.clear_history_confirm, name="clear_history_confirm"),

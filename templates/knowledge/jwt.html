@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Shell Toolkit | JWT{% endblock %}
+
+{% block content %}
+<section class="container jwt-page">
+    <h1>JWT</h1>
+    <p class="muted">Inspect, craft and validate JSON Web Tokens for pentesting and debugging workflows.</p>
+    <p class="muted">All processing happens locally in your browser.</p>
+
+    <div class="jwt-tabs" role="tablist" aria-label="JWT tools">
+        <button type="button" class="btn btn-primary jwt-tab active" data-tab="decode" aria-selected="true">Decode</button>
+        <button type="button" class="btn jwt-tab" data-tab="encode" aria-selected="false">Encode</button>
+        <button type="button" class="btn jwt-tab" data-tab="verify" aria-selected="false">Verify</button>
+    </div>
+
+    <article class="card jwt-panel active" data-panel="decode">
+        <h2>Decode</h2>
+        <p class="muted">Decoding does not verify signature integrity.</p>
+        <label for="jwt-decode-token">JWT token</label>
+        <textarea id="jwt-decode-token" rows="6" placeholder="Paste a JWT token"></textarea>
+        <div class="jwt-actions">
+            <button type="button" class="btn btn-primary" id="jwt-decode-btn">Decode token</button>
+            <button type="button" class="btn" id="jwt-decode-example">Load example</button>
+            <button type="button" class="btn" id="jwt-decode-clear">Clear</button>
+        </div>
+        <div id="jwt-decode-alert" class="alert alert-info">Treat pasted tokens and keys as sensitive material.</div>
+        <div class="jwt-grid mt-4">
+            <section class="terminal-box">
+                <p><strong>Header (JSON)</strong></p>
+                <pre id="jwt-header-json">-</pre>
+            </section>
+            <section class="terminal-box">
+                <p><strong>Payload (JSON)</strong></p>
+                <pre id="jwt-payload-json">-</pre>
+            </section>
+        </div>
+        <section class="terminal-box">
+            <p><strong>Signature</strong></p>
+            <pre id="jwt-signature">-</pre>
+        </section>
+        <section class="terminal-box">
+            <p><strong>Warnings / checks</strong></p>
+            <ul id="jwt-decode-warnings" class="jwt-list"></ul>
+        </section>
+    </article>
+
+    <article class="card jwt-panel" data-panel="encode">
+        <h2>Encode</h2>
+        <p class="muted">Build token parts and generate a JWT locally.</p>
+        <div class="jwt-grid">
+            <div>
+                <label for="jwt-encode-header">Header JSON</label>
+                <textarea id="jwt-encode-header" rows="8"></textarea>
+            </div>
+            <div>
+                <label for="jwt-encode-payload">Payload JSON</label>
+                <textarea id="jwt-encode-payload" rows="8"></textarea>
+            </div>
+        </div>
+        <div class="jwt-grid mt-4">
+            <div>
+                <label for="jwt-encode-alg">Algorithm</label>
+                <select id="jwt-encode-alg">
+                    <option value="none">none</option>
+                    <option value="HS256">HS256</option>
+                    <option value="HS384">HS384</option>
+                    <option value="HS512">HS512</option>
+                </select>
+            </div>
+            <div>
+                <label for="jwt-encode-secret">HMAC secret (HS*)</label>
+                <input id="jwt-encode-secret" type="password" autocomplete="off" placeholder="Enter shared secret">
+            </div>
+        </div>
+        <div class="jwt-actions">
+            <button type="button" class="btn btn-primary" id="jwt-generate-btn">Generate token</button>
+            <button type="button" class="btn" id="jwt-encode-example">Load example</button>
+            <button type="button" class="btn" id="jwt-encode-clear">Clear</button>
+            <button type="button" class="btn" id="jwt-send-decode">Send to Decode</button>
+            <button type="button" class="btn" id="jwt-send-verify">Send to Verify</button>
+        </div>
+        <div id="jwt-encode-alert" class="alert alert-info">Use this for testing and review. Keep secrets private.</div>
+        <section class="terminal-box" id="jwt-encode-output-box">
+            <p><strong>Generated JWT</strong></p>
+            <pre id="jwt-encode-output">-</pre>
+            <button type="button" class="btn" id="jwt-copy-generated">Copy</button>
+        </section>
+    </article>
+
+    <article class="card jwt-panel" data-panel="verify">
+        <h2>Verify</h2>
+        <label for="jwt-verify-token">JWT token</label>
+        <textarea id="jwt-verify-token" rows="6" placeholder="Paste a JWT token"></textarea>
+        <div class="jwt-grid mt-4">
+            <div>
+                <label for="jwt-verify-mode">Verification mode</label>
+                <select id="jwt-verify-mode">
+                    <option value="auto">Auto from header alg</option>
+                    <option value="none">none (unsigned)</option>
+                    <option value="HS256">HS256</option>
+                    <option value="HS384">HS384</option>
+                    <option value="HS512">HS512</option>
+                </select>
+            </div>
+            <div>
+                <label for="jwt-verify-secret">HMAC secret (HS*)</label>
+                <input id="jwt-verify-secret" type="password" autocomplete="off" placeholder="Enter verification secret">
+            </div>
+        </div>
+        <div class="jwt-actions">
+            <button type="button" class="btn btn-primary" id="jwt-verify-btn">Verify token</button>
+            <button type="button" class="btn" id="jwt-verify-clear">Clear</button>
+        </div>
+        <div id="jwt-verify-alert" class="alert alert-info">Review alg, kid, jku, jwk, x5u and lifetime-related claims carefully.</div>
+        <section class="terminal-box">
+            <p><strong>Verification checklist</strong></p>
+            <ul id="jwt-verify-checklist" class="jwt-list"></ul>
+        </section>
+    </article>
+
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.jwtToolConfig = {
+        logUrl: "{% url 'knowledge:jwt_log_action' %}",
+        csrfToken: "{{ csrf_token }}"
+    };
+</script>
+<script src="{% static 'js/jwt.js' %}" defer></script>
+{% endblock %}
+

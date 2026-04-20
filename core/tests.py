@@ -11,3 +11,10 @@ class HomeStaticUrlsTests(TestCase):
         self.assertContains(response, 'src="/static/js/app.js"')
         self.assertContains(response, 'src="/static/js/copy.js"')
         self.assertContains(response, 'src="/static/js/nav.js"')
+
+    def test_home_nav_links_include_jwt_and_remove_knowledge(self):
+        response = self.client.get("/", HTTP_HOST="127.0.0.1")
+
+        self.assertContains(response, 'href="/jwt/"')
+        self.assertNotContains(response, 'href="/knowledge/"')
+

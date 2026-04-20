@@ -40,14 +40,14 @@
                         <pre>{{ row.generated_output }}</pre>
                         <button type="button" class="btn" data-copy-target="#history-output-{{ forloop.counter }} pre">Copy</button>
                     </section>
-                    {% if row.favorite_target or row.module == 'encoder' %}
-                        {% if row.favorite_target and row.is_already_favorite %}
+                    {% if row.favorite_target or row.module == 'encoder' or row.module == 'jwt' %}
+                        {% if row.is_already_favorite %}
                             <button type="button" class="btn" disabled>Already saved</button>
                         {% elif row.favorite_target %}
                             <form method="post" action="{% url 'knowledge:add_favorite_from_history' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="history_id" value="{{ row.id }}">
-                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <input type="hidden" name="next" value="{% url 'knowledge:favorites' %}">
                                 <button type="submit" class="btn btn-primary">Add to favorites</button>
                             </form>
                         {% else %}
@@ -56,6 +56,7 @@
                                 <input type="hidden" name="app_label" value="knowledge">
                                 <input type="hidden" name="model" value="sessionhistory">
                                 <input type="hidden" name="object_id" value="{{ row.id }}">
+                                <input type="hidden" name="next" value="{% url 'knowledge:favorites' %}">
                                 <button type="submit" class="btn btn-primary">Add to favorites</button>
                             </form>
                         {% endif %}

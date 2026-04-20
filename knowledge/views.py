@@ -1,9 +1,11 @@
+import json
+
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.http import Http404
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from listeners.models import ListenerTemplate
@@ -14,126 +16,56 @@ from shells.models import ShellTemplate
 from .models import SessionFavorite, SessionHistory
 
 
-def index(request):
+def jwt_tool(request):
     # SECURITY: no command execution
-    query = (request.GET.get("q") or "").strip()
-    module_filter = (request.GET.get("module") or "").strip().lower()
-    platform_filter = (request.GET.get("platform") or "").strip().lower()
-    technique_filter = (request.GET.get("technique") or "").strip().lower()
-    difficulty_filter = (request.GET.get("difficulty") or "").strip().lower()
+    return render(request, "knowledge/jwt.html")
 
-    entries = []
-    entries.extend(_shell_entries(query))
-    entries.extend(_listener_entries(query))
-    entries.extend(_recon_entries(query))
-    entries.extend(_playbook_entries(query))
 
-    filtered_entries = _apply_filters(
-        entries=entries,
-        module_filter=module_filter,
-        platform_filter=platform_filter,
-        technique_filter=technique_filter,
-        difficulty_filter=difficulty_filter,
+@require_POST
+def jwt_log_action(request):
+    # SECURITY: no command execution
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except (TypeError, ValueError):
+        return JsonResponse({"ok": False, "error": "Invalid JSON payload."}, status=400)
+
+    action = str(payload.get("action") or "").strip().lower()
+    allowed_actions = {"decode", "encode", "verify"}
+    if action not in allowed_actions:
+        return JsonResponse({"ok": False, "error": "Invalid JWT action."}, status=400)
+
+    # Store only review metadata; do not persist sensitive token/key material.
+    raw_input = payload.get("input_data") if isinstance(payload.get("input_data"), dict) else {}
+    input_data = {
+        "action": action,
+        "alg": str(raw_input.get("alg") or "-")[:32],
+        "token_parts": int(raw_input.get("token_parts") or 0),
+        "warnings": int(raw_input.get("warnings") or 0),
+        "finding_counts": raw_input.get("finding_counts") if isinstance(raw_input.get("finding_counts"), dict) else {},
+        "signature_status": str(raw_input.get("signature_status") or "unknown")[:32],
+    }
+
+    generated_output = str(payload.get("generated_output") or "").strip()[:2000]
+    if not generated_output:
+        generated_output = "JWT review action executed in browser."
+
+    session_key = _ensure_session_key(request)
+    last_row = (
+        SessionHistory.objects.filter(session_key=session_key, module="jwt")
+        .order_by("-created_at")
+        .first()
+    )
+    if last_row and last_row.input_data == input_data and last_row.generated_output == generated_output:
+        return JsonResponse({"ok": True, "history_id": last_row.id, "deduplicated": True})
+
+    row = SessionHistory.objects.create(
+        session_key=session_key,
+        module="jwt",
+        input_data=input_data,
+        generated_output=generated_output,
     )
 
-    all_entries = _shell_entries("") + _listener_entries("") + _recon_entries("") + _playbook_entries("")
-    technique_options = sorted({item["technique"] for item in all_entries if item["technique"]})
-    difficulty_options = sorted({item["difficulty"] for item in all_entries if item["difficulty"] and item["difficulty"] != "n/a"})
-
-    context = {
-        "entries": sorted(filtered_entries, key=lambda item: (item["module"], item["title"].lower())),
-        "query": query,
-        "active_module": module_filter,
-        "active_platform": platform_filter,
-        "active_technique": technique_filter,
-        "active_difficulty": difficulty_filter,
-        "module_options": ["shells", "listeners", "recon", "playbooks"],
-        "platform_options": ["linux", "windows", "any"],
-        "technique_options": technique_options,
-        "difficulty_options": difficulty_options,
-    }
-    return render(request, "knowledge/index.html", context)
-
-
-def detail(request, slug):
-    # SECURITY: no command execution
-    session_key = _ensure_session_key(request)
-
-    if slug.startswith("shells-"):
-        object_id = _parse_int_suffix(slug, "shells-")
-        shell = get_object_or_404(ShellTemplate, id=object_id, is_active=True)
-        detail_data = {
-            "module": "shells",
-            "title": shell.name,
-            "summary": shell.description or shell.template,
-            "platform": shell.os,
-            "technique": f"{shell.shell_type}/{shell.language}",
-            "difficulty": shell.difficulty,
-            "tags": shell.tags,
-            "body": shell.template,
-            "app_label": "shells",
-            "model": "shelltemplate",
-            "object_id": shell.id,
-        }
-    elif slug.startswith("listeners-"):
-        object_id = _parse_int_suffix(slug, "listeners-")
-        listener = get_object_or_404(ListenerTemplate, id=object_id, is_active=True)
-        detail_data = {
-            "module": "listeners",
-            "title": listener.name,
-            "summary": listener.description or listener.template,
-            "platform": "any",
-            "technique": listener.tool,
-            "difficulty": "n/a",
-            "tags": listener.tags,
-            "body": listener.template,
-            "app_label": "listeners",
-            "model": "listenertemplate",
-            "object_id": listener.id,
-        }
-    elif slug.startswith("recon-"):
-        object_id = _parse_int_suffix(slug, "recon-")
-        recon = get_object_or_404(NmapProfile, id=object_id, is_active=True)
-        detail_data = {
-            "module": "recon",
-            "title": recon.name,
-            "summary": recon.description,
-            "platform": "any",
-            "technique": recon.scan_type,
-            "difficulty": recon.noise_level,
-            "tags": recon.nse_categories,
-            "body": recon.extra_flags or recon.lab_notes,
-            "app_label": "recon",
-            "model": "nmapprofile",
-            "object_id": recon.id,
-        }
-    elif slug.startswith("playbooks-"):
-        playbook_slug = slug[len("playbooks-") :]
-        playbook = get_object_or_404(PlaybookEntry, slug=playbook_slug, is_active=True)
-        detail_data = {
-            "module": "playbooks",
-            "title": playbook.title,
-            "summary": playbook.summary,
-            "platform": playbook.platform,
-            "technique": playbook.category,
-            "difficulty": playbook.difficulty,
-            "tags": playbook.tags,
-            "body": playbook.commands,
-            "app_label": "playbooks",
-            "model": "playbookentry",
-            "object_id": playbook.id,
-        }
-    else:
-        raise Http404("Knowledge entry not found")
-
-    content_type = ContentType.objects.get(app_label=detail_data["app_label"], model=detail_data["model"])
-    detail_data["is_favorite"] = SessionFavorite.objects.filter(
-        session_key=session_key,
-        content_type=content_type,
-        object_id=detail_data["object_id"],
-    ).exists()
-
-    return render(request, "knowledge/detail.html", {"entry": detail_data})
+    return JsonResponse({"ok": True, "history_id": row.id, "deduplicated": False})
 
 
 def history(request):
@@ -162,6 +94,13 @@ def history(request):
                 session_key=session_key,
                 content_type=content_type,
                 object_id=row.favorite_target["object_id"],
+            ).exists()
+        elif row.module in {"encoder", "jwt"}:
+            session_history_type = ContentType.objects.get(app_label="knowledge", model="sessionhistory")
+            row.is_already_favorite = SessionFavorite.objects.filter(
+                session_key=session_key,
+                content_type=session_history_type,
+                object_id=row.id,
             ).exists()
     return render(
         request,
@@ -213,18 +152,28 @@ def favorites(request):
     for favorite in favs:
         obj = favorite.content_object
         if obj is None:
+            if favorite.snapshot_url:
+                entries.append(
+                    {
+                        "module": favorite.snapshot_module or favorite.content_type.app_label,
+                        "title": favorite.snapshot_title or "Session entry",
+                        "summary": favorite.snapshot_summary or "Saved from history.",
+                        "url": favorite.snapshot_url,
+                        "created_at": favorite.created_at,
+                    }
+                )
             continue
 
-        knowledge_slug = _build_knowledge_slug(obj)
-        if not knowledge_slug:
+        url = _build_favorite_url(obj)
+        if not url:
             continue
 
         entries.append(
             {
-                "module": favorite.content_type.app_label,
+                "module": _favorite_module_name(obj, favorite.content_type.app_label),
                 "title": _favorite_title(obj),
                 "summary": _favorite_summary(obj),
-                "slug": knowledge_slug,
+                "url": url,
                 "created_at": favorite.created_at,
             }
         )
@@ -323,140 +272,28 @@ def toggle_favorite(request):
     )
 
     if created:
+        if app_label == "knowledge" and model == "sessionhistory":
+            row = SessionHistory.objects.filter(id=object_id, session_key=session_key).first()
+            if row:
+                snapshot = _build_session_history_snapshot(row)
+                favorite.snapshot_module = snapshot["module"]
+                favorite.snapshot_title = snapshot["title"]
+                favorite.snapshot_summary = snapshot["summary"]
+                favorite.snapshot_url = snapshot["url"]
+                favorite.save(
+                    update_fields=[
+                        "snapshot_module",
+                        "snapshot_title",
+                        "snapshot_summary",
+                        "snapshot_url",
+                    ]
+                )
         messages.success(request, "Added to favorites.")
     else:
         favorite.delete()
         messages.info(request, "Removed from favorites.")
-    
+
     return redirect(next_url)
-
-
-def _shell_entries(query):
-    queryset = ShellTemplate.objects.filter(is_active=True)
-    if query:
-        queryset = queryset.filter(
-            Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(template__icontains=query)
-            | Q(tags__icontains=query)
-            | Q(language__icontains=query)
-            | Q(shell_type__icontains=query)
-        )
-
-    return [
-        {
-            "module": "shells",
-            "title": obj.name,
-            "summary": obj.description or obj.template[:220],
-            "platform": obj.os,
-            "technique": f"{obj.shell_type}/{obj.language}",
-            "difficulty": obj.difficulty,
-            "slug": f"shells-{obj.id}",
-        }
-        for obj in queryset
-    ]
-
-
-def _listener_entries(query):
-    queryset = ListenerTemplate.objects.filter(is_active=True)
-    if query:
-        queryset = queryset.filter(
-            Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(template__icontains=query)
-            | Q(tags__icontains=query)
-            | Q(tool__icontains=query)
-        )
-
-    return [
-        {
-            "module": "listeners",
-            "title": obj.name,
-            "summary": obj.description or obj.template[:220],
-            "platform": "any",
-            "technique": obj.tool,
-            "difficulty": "n/a",
-            "slug": f"listeners-{obj.id}",
-        }
-        for obj in queryset
-    ]
-
-
-def _recon_entries(query):
-    queryset = NmapProfile.objects.filter(is_active=True)
-    if query:
-        queryset = queryset.filter(
-            Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(scan_type__icontains=query)
-            | Q(nse_categories__icontains=query)
-            | Q(extra_flags__icontains=query)
-            | Q(lab_notes__icontains=query)
-        )
-
-    return [
-        {
-            "module": "recon",
-            "title": obj.name,
-            "summary": obj.description or obj.lab_notes or obj.extra_flags,
-            "platform": "any",
-            "technique": obj.scan_type,
-            "difficulty": obj.noise_level,
-            "slug": f"recon-{obj.id}",
-        }
-        for obj in queryset
-    ]
-
-
-def _playbook_entries(query):
-    queryset = PlaybookEntry.objects.filter(is_active=True)
-    if query:
-        queryset = queryset.filter(
-            Q(title__icontains=query)
-            | Q(category__icontains=query)
-            | Q(tags__icontains=query)
-            | Q(summary__icontains=query)
-            | Q(commands__icontains=query)
-            | Q(explanation__icontains=query)
-        )
-
-    return [
-        {
-            "module": "playbooks",
-            "title": obj.title,
-            "summary": obj.summary,
-            "platform": obj.platform,
-            "technique": obj.category,
-            "difficulty": obj.difficulty,
-            "slug": f"playbooks-{obj.slug}",
-        }
-        for obj in queryset
-    ]
-
-
-def _apply_filters(entries, module_filter, platform_filter, technique_filter, difficulty_filter):
-    filtered = entries
-
-    if module_filter:
-        filtered = [entry for entry in filtered if entry["module"] == module_filter]
-
-    if platform_filter:
-        filtered = [entry for entry in filtered if entry["platform"] == platform_filter]
-
-    if technique_filter:
-        filtered = [entry for entry in filtered if technique_filter in entry["technique"].lower()]
-
-    if difficulty_filter:
-        filtered = [entry for entry in filtered if difficulty_filter in entry["difficulty"].lower()]
-
-    return filtered
-
-
-def _parse_int_suffix(slug, prefix):
-    value = slug[len(prefix) :]
-    if not value.isdigit():
-        raise Http404("Invalid knowledge entry")
-    return int(value)
 
 
 def _ensure_session_key(request):
@@ -465,16 +302,27 @@ def _ensure_session_key(request):
     return request.session.session_key
 
 
-def _build_knowledge_slug(obj):
+def _build_favorite_url(obj):
     if isinstance(obj, ShellTemplate):
-        return f"shells-{obj.id}"
+        return reverse("shells:generator")
     if isinstance(obj, ListenerTemplate):
-        return f"listeners-{obj.id}"
+        return reverse("listeners:generator")
     if isinstance(obj, NmapProfile):
-        return f"recon-{obj.id}"
+        return reverse("recon:nmap_builder")
     if isinstance(obj, PlaybookEntry):
-        return f"playbooks-{obj.slug}"
-    return ""
+        return reverse("playbooks:detail", kwargs={"slug": obj.slug})
+    if isinstance(obj, SessionHistory):
+        if obj.module == "encoder":
+            return reverse("encoder:tool")
+        if obj.module == "jwt":
+            return reverse("knowledge:jwt")
+    return None
+
+
+def _favorite_module_name(obj, fallback):
+    if isinstance(obj, SessionHistory):
+        return obj.module
+    return fallback
 
 
 def _favorite_title(obj):
@@ -494,6 +342,8 @@ def _favorite_summary(obj):
         return obj.description or obj.lab_notes or obj.extra_flags
     if isinstance(obj, PlaybookEntry):
         return obj.summary
+    if isinstance(obj, SessionHistory):
+        return obj.generated_output[:220]
     return ""
 
 
@@ -510,6 +360,11 @@ def _format_history_input(input_data):
         "lport": "LPORT",
         "encoding": "Encoding",
         "scan_type": "Scan type",
+        "action": "Action",
+        "alg": "Algorithm",
+        "token_parts": "Token parts",
+        "warnings": "Warnings",
+        "signature_status": "Signature status",
     }
     shell_type_map = {
         "reverse": "Reverse Shell",
@@ -574,5 +429,36 @@ def _resolve_history_favorite_target(row):
         return None
 
     return None
+
+
+def _build_session_history_snapshot(row):
+    action = ""
+    if isinstance(row.input_data, dict):
+        action = str(row.input_data.get("action") or "").strip().lower()
+
+    if row.module == "jwt":
+        title = f"JWT {action or 'review'}"
+        return {
+            "module": "jwt",
+            "title": title,
+            "summary": row.generated_output[:220] or "JWT entry saved from history.",
+            "url": reverse("knowledge:jwt"),
+        }
+
+    if row.module == "encoder":
+        title = "Encoder output"
+        return {
+            "module": "encoder",
+            "title": title,
+            "summary": row.generated_output[:220] or "Encoder entry saved from history.",
+            "url": reverse("encoder:tool"),
+        }
+
+    return {
+        "module": row.module,
+        "title": "Session entry",
+        "summary": row.generated_output[:220] or "Saved from history.",
+        "url": reverse("knowledge:history"),
+    }
 
 

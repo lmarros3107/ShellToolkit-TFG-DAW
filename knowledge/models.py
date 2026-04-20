@@ -22,6 +22,10 @@ class SessionFavorite(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey("content_type", "object_id")
+    snapshot_module = models.CharField(max_length=50, blank=True, default="")
+    snapshot_title = models.CharField(max_length=120, blank=True, default="")
+    snapshot_summary = models.TextField(blank=True, default="")
+    snapshot_url = models.CharField(max_length=255, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

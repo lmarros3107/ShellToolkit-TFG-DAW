@@ -693,6 +693,94 @@ textarea + .alert-error {
     margin: 0;
 }
 
+.jwt-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.jwt-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.jwt-tab {
+    margin-top: 0;
+}
+
+.jwt-panel {
+    display: none;
+}
+
+.jwt-panel.active {
+    display: grid;
+}
+
+.jwt-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+.jwt-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.jwt-actions .btn {
+    margin-top: 0;
+}
+
+.jwt-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.jwt-check-ok {
+    color: #7afeb7;
+}
+
+.jwt-check-warn {
+    color: #ffd385;
+}
+
+.jwt-check-fail {
+    color: #ff8ea8;
+}
+
+.jwt-finding {
+    list-style: none;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+}
+
+.jwt-finding-info {
+    border-color: rgba(79, 217, 255, 0.45);
+}
+
+.jwt-finding-low {
+    border-color: rgba(122, 254, 183, 0.4);
+}
+
+.jwt-finding-medium {
+    border-color: rgba(255, 211, 133, 0.45);
+}
+
+.jwt-finding-high {
+    border-color: rgba(255, 142, 168, 0.5);
+}
+
+@media (min-width: 920px) {
+    .jwt-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 600px) {
     #id_nse_categories {
         grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
