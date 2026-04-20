@@ -1,17 +1,19 @@
 # ShellToolkit
 
-ShellToolkit is a public educational Django platform for pentesting-lab support.
-The application generates command text and playbooks only, and never executes commands on the server.
+ShellToolkit es una plataforma educativa en Django para apoyar laboratorios de pentesting.
+La aplicacion genera texto de comandos y playbooks, y no ejecuta comandos en el servidor.
 
 ## Stack
 
 - Django 4.2
-- WhiteNoise for static files in production
-- Gunicorn for WSGI serving
-- PostgreSQL for production database
-- Docker Compose for deployment
+- WhiteNoise para estaticos en produccion
+- Gunicorn como servidor WSGI
+- PostgreSQL para base de datos en produccion
+- Docker Compose para despliegue
 
-## Local development (Linux)
+## Desarrollo local
+
+### Linux (bash)
 
 ```bash
 python3 -m venv .venv
@@ -26,44 +28,70 @@ python manage.py loaddata playbooks/fixtures/windows_playbooks.json
 python manage.py runserver
 ```
 
-## Static files notes
+### Windows (PowerShell)
 
-- `base.html` uses `{% load static %}` and valid `{% static '...' %}` paths.
-- `config/settings/base.py` defines `STATIC_URL`, `STATICFILES_DIRS`, `STATIC_ROOT`, `MEDIA_URL`, `MEDIA_ROOT`.
-- `static/` is the source of truth for project assets.
-- `staticfiles/` is generated output from `collectstatic` and must not be versioned.
-- Development uses `config.settings.dev` and production uses `config.settings.prod`.
-- `config/static_storage.py` keeps static URLs root-relative (e.g. `/static/...`) in all environments.
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+python manage.py migrate
+python manage.py loaddata shells/fixtures/initial_shells.json
+python manage.py loaddata listeners/fixtures/initial_listeners.json
+python manage.py loaddata playbooks/fixtures/linux_playbooks.json
+python manage.py loaddata playbooks/fixtures/windows_playbooks.json
+python manage.py runserver
+```
 
-## Settings module selection
+## Notas de archivos estaticos
 
-- CLI (`manage.py`) defaults to `config.settings.dev`.
-- WSGI/ASGI default to `config.settings.prod` for safer deployment fallback.
-- Override explicitly with `DJANGO_SETTINGS_MODULE` when needed.
+- `base.html` usa `{% load static %}` y rutas `{% static '...' %}` validas.
+- `config/settings/base.py` define `STATIC_URL`, `STATICFILES_DIRS`, `STATIC_ROOT`, `MEDIA_URL` y `MEDIA_ROOT`.
+- `static/` es la fuente de verdad de los assets del proyecto.
+- `staticfiles/` es salida generada por `collectstatic` y no debe versionarse en Git.
+- Desarrollo usa `config.settings.dev` y produccion usa `config.settings.prod`.
+- `config/static_storage.py` garantiza URLs estaticas con prefijo raiz (por ejemplo, `/static/...`).
 
-## Production deployment
+## Seleccion de settings
 
-Use Docker Compose (web + db):
+- CLI (`manage.py`) usa por defecto `config.settings.dev`.
+- WSGI/ASGI usan por defecto `config.settings.prod` como fallback seguro.
+- Si hace falta, define `DJANGO_SETTINGS_MODULE` de forma explicita.
+
+## Despliegue en produccion
+
+Usa Docker Compose (web + db):
 
 ```bash
 docker compose build
 docker compose up -d
 ```
 
-Detailed production steps are in `DEPLOYMENT.md`.
+Para el detalle completo, revisa `DEPLOYMENT.md`.
 
-## Security checks
+## Comprobaciones de seguridad
 
-Run deploy check inside container:
+Dentro del contenedor:
 
 ```bash
 docker compose exec web python manage.py check --deploy
 ```
 
-Local fallback for deploy check when PostgreSQL is unavailable:
+Fallback local sin PostgreSQL:
+
+### Linux (bash)
 
 ```bash
 export DJANGO_SETTINGS_MODULE="config.settings.prod"
 export USE_SQLITE_FOR_CHECK="True"
 python manage.py check --deploy
 ```
+
+### Windows (PowerShell)
+
+```powershell
+$env:DJANGO_SETTINGS_MODULE = "config.settings.prod"
+$env:USE_SQLITE_FOR_CHECK = "True"
+python manage.py check --deploy
+```
+
