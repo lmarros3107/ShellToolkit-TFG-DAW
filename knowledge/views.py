@@ -16,6 +16,19 @@ from shells.models import ShellTemplate
 from .models import SessionFavorite, SessionHistory
 
 
+MAX_JWT_LOG_BODY_BYTES = 8192
+ALLOWED_JWT_ACTIONS = {"decode", "encode", "verify"}
+ALLOWED_SIGNATURE_STATUSES = {
+    "unknown",
+    "not-run",
+    "valid-signature",
+    "invalid-signature",
+    "unsupported-algorithm",
+    "malformed-token",
+    "missing-verification-material",
+}
+
+
 def jwt_tool(request):
     # SECURITY: no command execution
     return render(request, "knowledge/jwt.html")
@@ -24,25 +37,52 @@ def jwt_tool(request):
 @require_POST
 def jwt_log_action(request):
     # SECURITY: no command execution
+    if len(request.body) > MAX_JWT_LOG_BODY_BYTES:
+        return JsonResponse({"ok": False, "error": "Payload too large."}, status=413)
+
     try:
         payload = json.loads(request.body.decode("utf-8"))
     except (TypeError, ValueError):
         return JsonResponse({"ok": False, "error": "Invalid JSON payload."}, status=400)
 
+    if not isinstance(payload, dict):
+        return JsonResponse({"ok": False, "error": "Invalid payload format."}, status=400)
+
     action = str(payload.get("action") or "").strip().lower()
-    allowed_actions = {"decode", "encode", "verify"}
-    if action not in allowed_actions:
+    if action not in ALLOWED_JWT_ACTIONS:
         return JsonResponse({"ok": False, "error": "Invalid JWT action."}, status=400)
 
     # Store only review metadata; do not persist sensitive token/key material.
     raw_input = payload.get("input_data") if isinstance(payload.get("input_data"), dict) else {}
+
+    try:
+        token_parts = _safe_int(raw_input.get("token_parts"), default=0, min_value=0, max_value=5)
+        warnings = _safe_int(raw_input.get("warnings"), default=0, min_value=0, max_value=200)
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "Invalid numeric input data."}, status=400)
+
+    signature_status = str(raw_input.get("signature_status") or "unknown").strip().lower()[:32]
+    if signature_status not in ALLOWED_SIGNATURE_STATUSES:
+        signature_status = "unknown"
+
+    alg = str(raw_input.get("alg") or "-").strip()[:32]
+
+    finding_counts_raw = raw_input.get("finding_counts") if isinstance(raw_input.get("finding_counts"), dict) else {}
+    finding_counts = {}
+    for key in ("info", "low", "medium", "high"):
+        if key in finding_counts_raw:
+            try:
+                finding_counts[key] = _safe_int(finding_counts_raw.get(key), default=0, min_value=0, max_value=500)
+            except ValueError:
+                finding_counts[key] = 0
+
     input_data = {
         "action": action,
-        "alg": str(raw_input.get("alg") or "-")[:32],
-        "token_parts": int(raw_input.get("token_parts") or 0),
-        "warnings": int(raw_input.get("warnings") or 0),
-        "finding_counts": raw_input.get("finding_counts") if isinstance(raw_input.get("finding_counts"), dict) else {},
-        "signature_status": str(raw_input.get("signature_status") or "unknown")[:32],
+        "alg": alg,
+        "token_parts": token_parts,
+        "warnings": warnings,
+        "finding_counts": finding_counts,
+        "signature_status": signature_status,
     }
 
     generated_output = str(payload.get("generated_output") or "").strip()[:2000]
@@ -155,6 +195,7 @@ def favorites(request):
             if favorite.snapshot_url:
                 entries.append(
                     {
+                        "favorite_id": favorite.id,
                         "module": favorite.snapshot_module or favorite.content_type.app_label,
                         "title": favorite.snapshot_title or "Session entry",
                         "summary": favorite.snapshot_summary or "Saved from history.",
@@ -170,6 +211,7 @@ def favorites(request):
 
         entries.append(
             {
+                "favorite_id": favorite.id,
                 "module": _favorite_module_name(obj, favorite.content_type.app_label),
                 "title": _favorite_title(obj),
                 "summary": _favorite_summary(obj),
@@ -179,6 +221,43 @@ def favorites(request):
         )
 
     return render(request, "favorites/favorites.html", {"entries": entries})
+
+
+def favorite_detail(request, favorite_id):
+    # SECURITY: no command execution
+    session_key = _ensure_session_key(request)
+    favorite = get_object_or_404(SessionFavorite, id=favorite_id, session_key=session_key)
+
+    obj = favorite.content_object
+    if obj is None:
+        entry = {
+            "module": favorite.snapshot_module or favorite.content_type.app_label,
+            "title": favorite.snapshot_title or "Session entry",
+            "summary": favorite.snapshot_summary or "Saved from history.",
+            "body": favorite.snapshot_summary or "No additional details available.",
+            "url": favorite.snapshot_url or reverse("knowledge:favorites"),
+            "created_at": favorite.created_at,
+            "is_snapshot": True,
+        }
+    else:
+        entry = {
+            "module": _favorite_module_name(obj, favorite.content_type.app_label),
+            "title": _favorite_title(obj),
+            "summary": _favorite_summary(obj),
+            "body": _favorite_body(obj),
+            "url": _build_favorite_url(obj) or reverse("knowledge:favorites"),
+            "created_at": favorite.created_at,
+            "is_snapshot": False,
+        }
+
+    return render(
+        request,
+        "favorites/detail.html",
+        {
+            "favorite": favorite,
+            "entry": entry,
+        },
+    )
 
 
 @require_POST
@@ -326,6 +405,21 @@ def _favorite_module_name(obj, fallback):
 
 
 def _favorite_title(obj):
+    if isinstance(obj, SessionHistory):
+        if obj.module == "jwt":
+            action = ""
+            if isinstance(obj.input_data, dict):
+                action = str(obj.input_data.get("action") or "").strip().lower()
+            return f"JWT {_title_case_token(action or 'review')}"
+
+        if obj.module == "encoder":
+            encoding = ""
+            if isinstance(obj.input_data, dict):
+                encoding = str(obj.input_data.get("encoding_type") or "").strip().lower()
+            return f"Encoder {_title_case_token(encoding or 'output')}"
+
+        return f"{_title_case_token(obj.module)} History"
+
     if hasattr(obj, "name"):
         return obj.name
     if hasattr(obj, "title"):
@@ -345,6 +439,20 @@ def _favorite_summary(obj):
     if isinstance(obj, SessionHistory):
         return obj.generated_output[:220]
     return ""
+
+
+def _favorite_body(obj):
+    if isinstance(obj, ShellTemplate):
+        return obj.template
+    if isinstance(obj, ListenerTemplate):
+        return obj.template
+    if isinstance(obj, NmapProfile):
+        return obj.extra_flags or obj.lab_notes or obj.description
+    if isinstance(obj, PlaybookEntry):
+        return obj.commands
+    if isinstance(obj, SessionHistory):
+        return obj.generated_output
+    return _favorite_summary(obj)
 
 
 def _format_history_input(input_data):
@@ -437,7 +545,7 @@ def _build_session_history_snapshot(row):
         action = str(row.input_data.get("action") or "").strip().lower()
 
     if row.module == "jwt":
-        title = f"JWT {action or 'review'}"
+        title = f"JWT {_title_case_token(action or 'review')}"
         return {
             "module": "jwt",
             "title": title,
@@ -446,7 +554,10 @@ def _build_session_history_snapshot(row):
         }
 
     if row.module == "encoder":
-        title = "Encoder output"
+        encoding = ""
+        if isinstance(row.input_data, dict):
+            encoding = str(row.input_data.get("encoding_type") or "").strip().lower()
+        title = f"Encoder {_title_case_token(encoding or 'output')}"
         return {
             "module": "encoder",
             "title": title,
@@ -460,5 +571,23 @@ def _build_session_history_snapshot(row):
         "summary": row.generated_output[:220] or "Saved from history.",
         "url": reverse("knowledge:history"),
     }
+
+
+def _title_case_token(value):
+    token = str(value or "").replace("_", " ").strip()
+    return token.title() if token else "-"
+
+
+def _safe_int(value, default=0, min_value=None, max_value=None):
+    if value in (None, ""):
+        number = int(default)
+    else:
+        number = int(value)
+
+    if min_value is not None and number < min_value:
+        raise ValueError("Value below minimum")
+    if max_value is not None and number > max_value:
+        raise ValueError("Value above maximum")
+    return number
 
 

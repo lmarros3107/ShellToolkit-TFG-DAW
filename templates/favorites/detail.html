@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Shell Toolkit | Favorite Detail{% endblock %}
+
+{% block content %}
+<section class="container">
+    <a href="{% url 'knowledge:favorites' %}" class="muted">&larr; Back to Favorites</a>
+
+    <article class="card mt-4">
+        <p class="muted">Module: {{ entry.module }} | Added: {{ entry.created_at }}</p>
+        <h1>{{ entry.title }}</h1>
+        <p>{{ entry.summary }}</p>
+
+        <div class="favorite-detail-actions">
+            <a class="btn btn-primary" href="{{ entry.url }}">Open module</a>
+            <form method="post" action="{% url 'knowledge:delete_favorite_confirm' favorite.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Remove favorite</button>
+            </form>
+        </div>
+
+        <h2>Reference content</h2>
+        <section class="terminal-box" id="favorite-body">
+            <pre>{{ entry.body }}</pre>
+            <button type="button" class="btn" data-copy-target="#favorite-body pre">Copy</button>
+        </section>
+    </article>
+</section>
+{% endblock %}
+

@@ -16,13 +16,13 @@
     </div>
 
     {% if entries %}
-        <div class="grid cards-grid mt-4">
+        <div class="grid cards-grid favorites-grid mt-4">
             {% for item in entries %}
                 <article class="card">
                     <p class="muted">Module: {{ item.module }} | Added: {{ item.created_at }}</p>
                     <h2>{{ item.title }}</h2>
                     <p>{{ item.summary }}</p>
-                    <a class="btn btn-primary" href="{{ item.url }}">Open module</a>
+                    <a class="btn btn-primary" href="{% url 'knowledge:favorite_detail' item.favorite_id %}">Open detail</a>
                 </article>
             {% endfor %}
         </div>

@@ -520,6 +520,31 @@ textarea + .alert-error {
     font-size: 0.875rem;
 }
 
+.favorite-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.favorite-detail-actions form {
+    margin: 0;
+}
+
+.favorite-detail-actions .btn {
+    margin-top: 0;
+}
+
+.favorites-grid .card {
+    display: flex;
+    flex-direction: column;
+    min-height: 260px;
+}
+
+.favorites-grid .card .btn {
+    margin-top: auto;
+}
+
 @media (max-width: 600px) {
     .stat-bar {
         gap: 1rem;

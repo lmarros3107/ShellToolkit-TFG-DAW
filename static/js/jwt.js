@@ -9,7 +9,9 @@
     signature: '',
     warnings: [],
     verifyStatus: 'not-run',
-    verifyChecklist: []
+    verifyChecklist: [],
+    decodeAlertToken: 0,
+    encodeAlertToken: 0
   };
 
   function qs(id) {
@@ -195,6 +197,13 @@
     if (!element) {
       return;
     }
+    if (!text) {
+      element.className = 'alert';
+      element.textContent = '';
+      element.style.display = 'none';
+      return;
+    }
+    element.style.display = '';
     element.className = 'alert alert-' + level;
     element.textContent = text;
   }
@@ -265,7 +274,7 @@
       state.verifyChecklist = checklist;
       renderVerifyChecklist();
       setAlert(qs('jwt-verify-alert'), 'error', 'Malformed token.');
-      return;
+      return false;
     }
 
     var alg = mode === 'auto' ? (parsed.header.alg || '') : mode;
@@ -286,6 +295,10 @@
       if (!secret) {
         state.verifyStatus = 'missing-verification-material';
         add('signature', 'fail', 'Missing secret for HMAC verification');
+        state.verifyChecklist = checklist;
+        renderVerifyChecklist();
+        setAlert(qs('jwt-verify-alert'), 'error', 'Missing verification material.');
+        return false;
       } else {
         var signedData = parsed.parts[0] + '.' + parsed.parts[1];
         var expected = await hmacSign(alg, secret, signedData);
@@ -303,6 +316,7 @@
 
     var level = state.verifyStatus === 'valid-signature' ? 'success' : 'warning';
     setAlert(qs('jwt-verify-alert'), level, 'Verification result: ' + state.verifyStatus + '.');
+    return true;
   }
 
   function renderVerifyChecklist() {
@@ -317,7 +331,7 @@
     });
   }
 
-  async function saveHistory(action, alertElementId) {
+  async function saveHistory(action, alertElementId, alertToken) {
     if (!config.logUrl || !config.csrfToken) {
       return;
     }
@@ -349,10 +363,22 @@
         throw new Error('Request failed');
       }
 
+      if (alertElementId === 'jwt-decode-alert' && alertToken !== state.decodeAlertToken) {
+        return;
+      }
+      if (alertElementId === 'jwt-encode-alert' && alertToken !== state.encodeAlertToken) {
+        return;
+      }
       if (alertElementId) {
         setAlert(qs(alertElementId), 'success', 'Saved to history automatically.');
       }
     } catch (error) {
+      if (alertElementId === 'jwt-decode-alert' && alertToken !== state.decodeAlertToken) {
+        return;
+      }
+      if (alertElementId === 'jwt-encode-alert' && alertToken !== state.encodeAlertToken) {
+        return;
+      }
       if (alertElementId) {
         setAlert(qs(alertElementId), 'error', 'Could not save history entry.');
       }
@@ -385,7 +411,15 @@
 
   function setupDecode() {
     qs('jwt-decode-btn').addEventListener('click', function () {
+      state.decodeAlertToken += 1;
+      var decodeToken = state.decodeAlertToken;
       var token = qs('jwt-decode-token').value.trim();
+
+      if (!token) {
+        setAlert(qs('jwt-decode-alert'), 'error', 'Token is required.');
+        return;
+      }
+
       var parsed = parseToken(token);
       state.token = token;
       state.header = parsed.header;
@@ -393,7 +427,10 @@
       state.signature = parsed.signature;
       state.warnings = parsed.warnings;
       updateDecodeUI(parsed);
-      saveHistory('decode', 'jwt-decode-alert');
+
+      if (parsed.valid) {
+        saveHistory('decode', 'jwt-decode-alert', decodeToken);
+      }
     });
 
     qs('jwt-decode-example').addEventListener('click', function () {
@@ -403,13 +440,27 @@
     });
 
     qs('jwt-decode-clear').addEventListener('click', function () {
+      state.decodeAlertToken += 1;
       qs('jwt-decode-token').value = '';
       state.token = '';
       state.header = null;
       state.payload = null;
       state.signature = '';
       state.warnings = [];
-      updateDecodeUI({ header: null, payload: null, signature: '', warnings: [] });
+      qs('jwt-header-json').textContent = '-';
+      qs('jwt-payload-json').textContent = '-';
+      qs('jwt-signature').textContent = '-';
+      qs('jwt-decode-warnings').innerHTML = '';
+      setAlert(qs('jwt-decode-alert'), 'info', '');
+    });
+
+    qs('jwt-decode-send-verify').addEventListener('click', function () {
+      var token = qs('jwt-decode-token').value.trim();
+      if (token) {
+        qs('jwt-verify-token').value = token;
+      }
+      activePanel('verify');
+      qs('jwt-verify-btn').click();
     });
 
   }
@@ -418,6 +469,8 @@
     loadEncodeExample();
 
     qs('jwt-generate-btn').addEventListener('click', async function () {
+      state.encodeAlertToken += 1;
+      var encodeToken = state.encodeAlertToken;
       var header;
       var payload;
       try {
@@ -465,7 +518,7 @@
       state.signature = signature;
       state.warnings = [];
       setAlert(qs('jwt-encode-alert'), 'success', 'Token generated locally in your browser.');
-      saveHistory('encode', 'jwt-encode-alert');
+      saveHistory('encode', 'jwt-encode-alert', encodeToken);
     });
 
     qs('jwt-copy-generated').addEventListener('click', function () {
@@ -479,16 +532,24 @@
     qs('jwt-encode-example').addEventListener('click', loadEncodeExample);
 
     qs('jwt-encode-clear').addEventListener('click', function () {
+      state.encodeAlertToken += 1;
       qs('jwt-encode-header').value = '';
       qs('jwt-encode-payload').value = '';
+      qs('jwt-encode-alg').value = 'none';
       qs('jwt-encode-secret').value = '';
       qs('jwt-encode-output').textContent = '-';
+      qs('jwt-decode-token').value = '';
+      qs('jwt-verify-token').value = '';
+
+      state.token = '';
+      state.header = null;
+      state.payload = null;
+      state.signature = '';
+      state.warnings = [];
+
+      setAlert(qs('jwt-encode-alert'), 'info', '');
     });
 
-    qs('jwt-send-decode').addEventListener('click', function () {
-      activePanel('decode');
-      qs('jwt-decode-btn').click();
-    });
 
     qs('jwt-send-verify').addEventListener('click', function () {
       activePanel('verify');
@@ -499,8 +560,10 @@
 
   function setupVerify() {
     qs('jwt-verify-btn').addEventListener('click', function () {
-      runVerify().then(function () {
-        saveHistory('verify', 'jwt-verify-alert');
+      runVerify().then(function (canLog) {
+        if (canLog) {
+          saveHistory('verify', 'jwt-verify-alert');
+        }
       });
     });
 
