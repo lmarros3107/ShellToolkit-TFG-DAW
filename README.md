@@ -29,9 +29,17 @@ python manage.py runserver
 ## Static files notes
 
 - `base.html` uses `{% load static %}` and valid `{% static '...' %}` paths.
-- `config/settings/base.py` defines `STATIC_URL`, `STATICFILES_DIRS`, `STATIC_ROOT`.
-- Development uses plain static storage.
-- Production uses WhiteNoise compressed manifest storage.
+- `config/settings/base.py` defines `STATIC_URL`, `STATICFILES_DIRS`, `STATIC_ROOT`, `MEDIA_URL`, `MEDIA_ROOT`.
+- `static/` is the source of truth for project assets.
+- `staticfiles/` is generated output from `collectstatic` and must not be versioned.
+- Development uses `config.settings.dev` and production uses `config.settings.prod`.
+- `config/static_storage.py` keeps static URLs root-relative (e.g. `/static/...`) in all environments.
+
+## Settings module selection
+
+- CLI (`manage.py`) defaults to `config.settings.dev`.
+- WSGI/ASGI default to `config.settings.prod` for safer deployment fallback.
+- Override explicitly with `DJANGO_SETTINGS_MODULE` when needed.
 
 ## Production deployment
 

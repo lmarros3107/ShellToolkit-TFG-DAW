@@ -41,13 +41,8 @@ else:
         "default": _database_from_url(config("DATABASE_URL")),
     }
 
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
+STORAGES["staticfiles"] = {
+    "BACKEND": "config.static_storage.SafeCompressedManifestStaticFilesStorage",
 }
 
 SECURE_SSL_REDIRECT = True

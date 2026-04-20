@@ -8,9 +8,6 @@ MIDDLEWARE = [
     mw for mw in MIDDLEWARE if mw != "whitenoise.middleware.WhiteNoiseMiddleware"
 ]
 
-STORAGES["staticfiles"] = {
-    "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-}
 
 DATABASES = {
     "default": {
