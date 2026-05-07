@@ -14,6 +14,7 @@ class EncoderToolViewTests(TestCase):
             {
                 "input_text": "hello world",
                 "encoding_type": "base64",
+                "action": "encode",
             },
         )
 
@@ -28,6 +29,7 @@ class EncoderToolViewTests(TestCase):
             {
                 "input_text": "a b/c",
                 "encoding_type": "url",
+                "action": "encode",
             },
         )
 
@@ -40,6 +42,7 @@ class EncoderToolViewTests(TestCase):
             {
                 "input_text": "ABC",
                 "encoding_type": "hex",
+                "action": "encode",
             },
         )
 
@@ -52,9 +55,51 @@ class EncoderToolViewTests(TestCase):
             {
                 "input_text": "   ",
                 "encoding_type": "base64",
+                "action": "encode",
             },
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Input text is required.")
 
+    def test_base64_decoding_and_history(self):
+        response = self.client.post(
+            reverse("encoder:tool"),
+            {
+                "input_text": "aGVsbG8gd29ybGQ=",
+                "encoding_type": "base64",
+                "action": "decode",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "hello world")
+        history = SessionHistory.objects.filter(module="encoder").first()
+        self.assertIsNotNone(history)
+        self.assertEqual(history.input_data.get("action"), "decode")
+
+    def test_url_decoding(self):
+        response = self.client.post(
+            reverse("encoder:tool"),
+            {
+                "input_text": "a%20b%2Fc",
+                "encoding_type": "url",
+                "action": "decode",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "a b/c")
+
+    def test_hex_decoding(self):
+        response = self.client.post(
+            reverse("encoder:tool"),
+            {
+                "input_text": "414243",
+                "encoding_type": "hex",
+                "action": "decode",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ABC")

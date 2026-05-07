@@ -413,10 +413,13 @@ def _favorite_title(obj):
             return f"JWT {_title_case_token(action or 'review')}"
 
         if obj.module == "encoder":
+            action = ""
             encoding = ""
             if isinstance(obj.input_data, dict):
+                action = str(obj.input_data.get("action") or "").strip().lower()
                 encoding = str(obj.input_data.get("encoding_type") or "").strip().lower()
-            return f"Encoder {_title_case_token(encoding or 'output')}"
+            label = "Decoder" if action == "decode" else "Encoder"
+            return f"{label} {_title_case_token(encoding or 'output')}"
 
         return f"{_title_case_token(obj.module)} History"
 
@@ -467,6 +470,7 @@ def _format_history_input(input_data):
         "lhost": "LHOST",
         "lport": "LPORT",
         "encoding": "Encoding",
+        "encoding_type": "Encoding type",
         "scan_type": "Scan type",
         "action": "Action",
         "alg": "Algorithm",
@@ -557,7 +561,8 @@ def _build_session_history_snapshot(row):
         encoding = ""
         if isinstance(row.input_data, dict):
             encoding = str(row.input_data.get("encoding_type") or "").strip().lower()
-        title = f"Encoder {_title_case_token(encoding or 'output')}"
+        label = "Decoder" if action == "decode" else "Encoder"
+        title = f"{label} {_title_case_token(encoding or 'output')}"
         return {
             "module": "encoder",
             "title": title,
@@ -589,5 +594,4 @@ def _safe_int(value, default=0, min_value=None, max_value=None):
     if max_value is not None and number > max_value:
         raise ValueError("Value above maximum")
     return number
-
 

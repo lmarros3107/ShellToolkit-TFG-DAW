@@ -2,6 +2,10 @@ from django import forms
 
 
 class EncoderForm(forms.Form):
+    ACTION_CHOICES = [
+        ("encode", "Encode"),
+        ("decode", "Decode"),
+    ]
     ENCODING_CHOICES = [
         ("base64", "Base64"),
         ("url", "URL Encode"),
@@ -12,8 +16,9 @@ class EncoderForm(forms.Form):
         max_length=2000,
         required=False,
         strip=True,
-        widget=forms.Textarea(attrs={"rows": 6, "placeholder": "Enter text to encode"}),
+        widget=forms.Textarea(attrs={"rows": 6, "placeholder": "Enter text to encode or decode"}),
     )
+    action = forms.ChoiceField(choices=ACTION_CHOICES, required=True, initial="encode")
     encoding_type = forms.ChoiceField(choices=ENCODING_CHOICES, required=True)
 
     def clean_input_text(self):
