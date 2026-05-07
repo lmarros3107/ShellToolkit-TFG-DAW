@@ -8,7 +8,7 @@ class PlaybookEntry(models.Model):
     ]
 
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, max_length=120)
     platform = models.CharField(max_length=20, choices=PLATFORMS)
     category = models.CharField(max_length=100)
     tags = models.CharField(max_length=300, blank=True)

@@ -45,7 +45,10 @@ STORAGES["staticfiles"] = {
     "BACKEND": "config.static_storage.SafeCompressedManifestStaticFilesStorage",
 }
 
+WHITENOISE_MANIFEST_STRICT = False
+
 SECURE_SSL_REDIRECT = True
+SECURE_REDIRECT_EXEMPT = [r"^health/$"]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 SECURE_HSTS_SECONDS = 31536000
